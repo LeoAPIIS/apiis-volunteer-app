@@ -7,13 +7,7 @@ import { ApiisLogo } from '@/components/apiis-logo'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 function translateAuthError(msg: string): string {
   const m = msg.toLowerCase()
@@ -63,14 +57,13 @@ export function LoginPage() {
         <div className="mb-6 flex flex-col items-center text-center">
           <ApiisLogo className="h-24 w-auto" />
           <p className="mt-4 text-sm text-white/70">
-            21st Century Training. For Christians. For Global Impact.
+            21st Century Training. For Christians. For Free
           </p>
         </div>
 
         <Card className="w-full shadow-xl">
         <CardHeader className="text-center">
           <CardTitle className="text-xl">Sign in</CardTitle>
-          <CardDescription>Use your APIIS email and password</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="flex flex-col gap-4">

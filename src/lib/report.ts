@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase'
 export interface ReportStudent {
   id: string
   full_name: string
+  email: string
   group_name: string
   class_name: string
 }
@@ -22,7 +23,7 @@ export interface ReportData {
 export async function fetchReportData(classId?: string): Promise<ReportData> {
   let studentQuery = supabase
     .from('students')
-    .select('id, full_name, groups!inner(name, cohort_id, cohorts(name))')
+    .select('id, full_name, email, groups!inner(name, cohort_id, cohorts(name))')
     .order('full_name')
   if (classId) studentQuery = studentQuery.eq('groups.cohort_id', classId)
   const { data: sData, error: sErr } = await studentQuery
@@ -32,11 +33,13 @@ export async function fetchReportData(classId?: string): Promise<ReportData> {
     const rec = r as unknown as {
       id: string
       full_name: string
+      email: string | null
       groups: { name: string; cohorts: { name: string } | null } | null
     }
     return {
       id: rec.id,
       full_name: rec.full_name,
+      email: rec.email ?? '',
       group_name: rec.groups?.name ?? '',
       class_name: rec.groups?.cohorts?.name ?? '',
     }
@@ -84,15 +87,15 @@ export async function exportStudentMatrix(opts: { classId?: string; fileName?: s
   const XLSX = await import('xlsx')
 
   // 两行表头：每个日期占两列（Score / Remark），日期作为合并的上层标题。
-  const top: (string | number)[] = ['Class', 'Group', 'Student']
-  const sub: (string | number)[] = ['', '', '']
+  const top: (string | number)[] = ['Class', 'Group', 'Student', 'Email']
+  const sub: (string | number)[] = ['', '', '', '']
   for (const d of dates) {
     top.push(d, '')
     sub.push('Score', 'Remark')
   }
   const aoa: (string | number)[][] = [top, sub]
   for (const s of students) {
-    const row: (string | number)[] = [s.class_name, s.group_name, s.full_name]
+    const row: (string | number)[] = [s.class_name, s.group_name, s.full_name, s.email]
     for (const d of dates) {
       const c = cells[s.id]?.[d]
       row.push(c && c.score !== null ? c.score : '', c?.note ?? '')
@@ -102,9 +105,9 @@ export async function exportStudentMatrix(opts: { classId?: string; fileName?: s
 
   const ws = XLSX.utils.aoa_to_sheet(aoa)
   const merges: { s: { r: number; c: number }; e: { r: number; c: number } }[] = []
-  for (let c = 0; c < 3; c++) merges.push({ s: { r: 0, c }, e: { r: 1, c } }) // Class/Group/Student 竖向合并
+  for (let c = 0; c < 4; c++) merges.push({ s: { r: 0, c }, e: { r: 1, c } }) // Class/Group/Student/Email 竖向合并
   for (let i = 0; i < dates.length; i++) {
-    const c = 3 + i * 2
+    const c = 4 + i * 2
     merges.push({ s: { r: 0, c }, e: { r: 0, c: c + 1 } }) // 日期横跨 Score+Remark 两列
   }
   ws['!merges'] = merges

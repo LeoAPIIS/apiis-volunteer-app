@@ -1129,4 +1129,32 @@ update public.profiles p set role = 'super_admin'
 from auth.users u
 where u.id = p.id and lower(u.email) = 'itsupport@apiis.org';
 
+-- ── 20260619100000_volunteer_email：志愿者列表增加 email 列（join auth.users） ──
+drop function if exists public.admin_volunteer_activity();
+create or replace function public.admin_volunteer_activity()
+returns table (
+  volunteer_id      uuid,
+  full_name         text,
+  email             text,
+  role              text,
+  assigned_groups   bigint,
+  sessions_recorded bigint,
+  last_active       date,
+  coverage_count    bigint
+)
+language sql security definer set search_path = '' as $$
+  select
+    p.id, p.full_name, u.email::text, p.role,
+    (select count(*) from public.assignments a where a.volunteer_id = p.id),
+    (select count(distinct (ar.group_id, ar.session_date))
+       from public.attendance_records ar where ar.volunteer_id = p.id),
+    (select max(ar.session_date) from public.attendance_records ar where ar.volunteer_id = p.id),
+    (select count(*) from public.coverage_requests cr where cr.covered_by = p.id)
+  from public.profiles p
+  join auth.users u on u.id = p.id
+  where public.is_admin()
+  order by p.full_name;
+$$;
+grant execute on function public.admin_volunteer_activity() to authenticated;
+
 

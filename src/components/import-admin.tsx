@@ -74,7 +74,7 @@ function resolveGroupId(
   return groups.find((g) => g.cohort_id === cid && g.name.toLowerCase() === want)?.id ?? null
 }
 
-function ImportStudents() {
+export function ImportStudents() {
   const qc = useQueryClient()
   const classesQ = useClasses()
   const groupsQ = useAllGroups()
@@ -172,7 +172,7 @@ function ImportStudents() {
   )
 }
 
-function ImportVolunteers() {
+export function ImportVolunteers() {
   const qc = useQueryClient()
   const classesQ = useClasses()
   const groupsQ = useAllGroups()
@@ -286,11 +286,3 @@ function ImportVolunteers() {
   )
 }
 
-export function ImportAdmin() {
-  return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <ImportStudents />
-      <ImportVolunteers />
-    </div>
-  )
-}

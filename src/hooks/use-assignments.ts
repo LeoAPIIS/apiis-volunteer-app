@@ -57,6 +57,7 @@ export function useUnassign() {
 export interface VolunteerActivity {
   volunteer_id: string
   full_name: string
+  email: string
   role: string
   assigned_groups: number
   sessions_recorded: number

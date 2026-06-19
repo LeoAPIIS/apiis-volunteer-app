@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Lock, ShieldCheck, ShieldOff, Trash2 } from 'lucide-react'
+import { Lock, ShieldCheck, ShieldOff, Trash2, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuth } from '@/lib/auth'
 import {
@@ -9,7 +9,9 @@ import {
   useVolunteerActivity,
 } from '@/hooks/use-assignments'
 import { useAllGroups } from '@/hooks/use-groups'
+import { ImportVolunteers } from '@/components/import-admin'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
   Table,
@@ -33,6 +35,7 @@ export function VolunteersReport({ classFilter }: { classFilter: string }) {
   const del = useDeleteVolunteer()
   const setRole = useSetUserRole()
   const [query, setQuery] = useState('')
+  const [showImport, setShowImport] = useState(false)
 
   // 按班级筛选 → 搜索(姓名)→ 按姓名 a→z
   const rows = useMemo(() => {
@@ -50,7 +53,10 @@ export function VolunteersReport({ classFilter }: { classFilter: string }) {
       list = all.filter((v) => ids.has(v.volunteer_id))
     }
     const q = query.trim().toLowerCase()
-    if (q) list = list.filter((v) => v.full_name.toLowerCase().includes(q))
+    if (q)
+      list = list.filter(
+        (v) => v.full_name.toLowerCase().includes(q) || (v.email || '').toLowerCase().includes(q),
+      )
     return [...list].sort((a, b) =>
       a.full_name.localeCompare(b.full_name, undefined, { sensitivity: 'base', numeric: true }),
     )
@@ -84,12 +90,22 @@ export function VolunteersReport({ classFilter }: { classFilter: string }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <Input
-        placeholder="Search by name…"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        className="max-w-xs"
-      />
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <Input
+          placeholder="Search by name or email…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="max-w-xs"
+        />
+        <Button
+          variant={showImport ? 'secondary' : 'outline'}
+          onClick={() => setShowImport((v) => !v)}
+        >
+          <Upload className="size-4" /> Import CSV
+        </Button>
+      </div>
+
+      {showImport && <ImportVolunteers />}
 
       {rows.length === 0 ? (
         <p className="text-muted-foreground text-sm">No matching users.</p>
@@ -99,6 +115,7 @@ export function VolunteersReport({ classFilter }: { classFilter: string }) {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
+                <TableHead className="whitespace-nowrap">Email</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead className="text-center">Assigned groups</TableHead>
                 <TableHead className="text-center">Sessions attended</TableHead>
@@ -116,6 +133,7 @@ export function VolunteersReport({ classFilter }: { classFilter: string }) {
                 return (
                   <TableRow key={v.volunteer_id}>
                     <TableCell className="font-medium">{v.full_name}</TableCell>
+                    <TableCell className="text-muted-foreground whitespace-nowrap">{v.email || '—'}</TableCell>
                     <TableCell>
                       <Badge
                         variant={

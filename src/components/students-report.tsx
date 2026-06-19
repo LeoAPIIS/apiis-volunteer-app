@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
-import { Download, Trash2 } from 'lucide-react'
+import { Download, Trash2, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAttendanceReport } from '@/hooks/use-attendance'
 import { useDeleteStudent } from '@/hooks/use-groups'
 import { exportStudentMatrix } from '@/lib/report'
+import { ImportStudents } from '@/components/import-admin'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -17,6 +18,7 @@ import {
 
 export function StudentsReport({ classFilter }: { classFilter: string }) {
   const [exporting, setExporting] = useState(false)
+  const [showImport, setShowImport] = useState(false)
   const [query, setQuery] = useState('')
   const reportQ = useAttendanceReport(classFilter === 'all' ? undefined : classFilter)
   const del = useDeleteStudent()
@@ -30,6 +32,7 @@ export function StudentsReport({ classFilter }: { classFilter: string }) {
       ? list.filter(
           (s) =>
             s.full_name.toLowerCase().includes(q) ||
+            s.email.toLowerCase().includes(q) ||
             s.class_name.toLowerCase().includes(q) ||
             s.group_name.toLowerCase().includes(q),
         )
@@ -72,10 +75,20 @@ export function StudentsReport({ classFilter }: { classFilter: string }) {
           onChange={(e) => setQuery(e.target.value)}
           className="max-w-xs"
         />
-        <Button variant="outline" onClick={() => void onExport()} disabled={exporting}>
-          <Download className="size-4" /> {exporting ? 'Exporting…' : 'Export Excel'}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant={showImport ? 'secondary' : 'outline'}
+            onClick={() => setShowImport((v) => !v)}
+          >
+            <Upload className="size-4" /> Import CSV
+          </Button>
+          <Button variant="outline" onClick={() => void onExport()} disabled={exporting}>
+            <Download className="size-4" /> {exporting ? 'Exporting…' : 'Export Excel'}
+          </Button>
+        </div>
       </div>
+
+      {showImport && <ImportStudents />}
 
       {reportQ.isLoading ? (
         <p className="text-muted-foreground text-sm">Loading…</p>
@@ -87,6 +100,7 @@ export function StudentsReport({ classFilter }: { classFilter: string }) {
             <TableHeader>
               <TableRow>
                 <TableHead className="bg-background sticky left-0 whitespace-nowrap">Student</TableHead>
+                <TableHead className="whitespace-nowrap">Email</TableHead>
                 <TableHead className="whitespace-nowrap">Class</TableHead>
                 <TableHead className="whitespace-nowrap">Group</TableHead>
                 {report.dates.map((d) => (
@@ -100,7 +114,7 @@ export function StudentsReport({ classFilter }: { classFilter: string }) {
               {visibleStudents.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={3 + report.dates.length}
+                    colSpan={4 + report.dates.length}
                     className="text-muted-foreground text-center text-sm"
                   >
                     No matches.
@@ -122,6 +136,7 @@ export function StudentsReport({ classFilter }: { classFilter: string }) {
                         </button>
                       </span>
                     </TableCell>
+                    <TableCell className="text-muted-foreground whitespace-nowrap">{s.email}</TableCell>
                     <TableCell className="text-muted-foreground whitespace-nowrap">{s.class_name}</TableCell>
                     <TableCell className="text-muted-foreground whitespace-nowrap">{s.group_name}</TableCell>
                     {report.dates.map((d) => {

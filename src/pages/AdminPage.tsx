@@ -6,7 +6,6 @@ import { GroupAssignmentCard } from '@/components/group-assignment-card'
 import { StudentsReport } from '@/components/students-report'
 import { SchedulingAdmin } from '@/components/scheduling-admin'
 import { VolunteersReport } from '@/components/volunteers-report'
-import { ImportAdmin } from '@/components/import-admin'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -107,7 +106,6 @@ export function AdminPage() {
           <TabsTrigger value="students">Students</TabsTrigger>
           <TabsTrigger value="volunteers">Volunteers</TabsTrigger>
           <TabsTrigger value="scheduling">Scheduling</TabsTrigger>
-          <TabsTrigger value="import">Import</TabsTrigger>
         </TabsList>
         <TabsContent value="assignments" className="mt-4">
           <AssignmentsTab classFilter={classFilter} />
@@ -123,9 +121,6 @@ export function AdminPage() {
         </TabsContent>
         <TabsContent value="scheduling" className="mt-4">
           <SchedulingAdmin />
-        </TabsContent>
-        <TabsContent value="import" className="mt-4">
-          <ImportAdmin />
         </TabsContent>
       </Tabs>
     </div>
