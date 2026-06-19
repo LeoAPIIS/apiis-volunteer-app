@@ -4,10 +4,24 @@ import { ArrowLeft, Video } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
 import { useGroup, useStudents } from '@/hooks/use-groups'
 import { useAttendance } from '@/hooks/use-attendance'
+import {
+  curriculumForClass,
+  currentWeek,
+  dateForWeek,
+  weekLabel,
+  weeksForCurriculum,
+} from '@/lib/calendar'
 import { AttendanceForm } from '@/components/attendance-form'
 import { FullPageSpinner } from '@/components/full-page-spinner'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 function todayLocal(): string {
   return new Date().toLocaleDateString('en-CA') // YYYY-MM-DD
@@ -16,14 +30,22 @@ function todayLocal(): string {
 export function GroupAttendancePage() {
   const { groupId } = useParams<{ groupId: string }>()
   const { user } = useAuth()
-  const [sessionDate, setSessionDate] = useState(todayLocal())
+  const [picked, setPicked] = useState<string | null>(null)
 
   const groupQ = useGroup(groupId)
   const studentsQ = useStudents(groupId)
+
+  const group = groupQ.data
+  const curriculum = curriculumForClass(group?.cohort?.name)
+  const today = todayLocal()
+  // 默认选中“当前/最近一周”；无法识别课程时退回到普通日期选择
+  const defaultDate = curriculum ? dateForWeek(curriculum, currentWeek(curriculum, today)) : today
+  const sessionDate = picked ?? defaultDate ?? today
+
   const attendanceQ = useAttendance(groupId, sessionDate)
 
   if (groupQ.isLoading || studentsQ.isLoading) return <FullPageSpinner />
-  if (groupQ.isError || !groupQ.data) {
+  if (groupQ.isError || !group) {
     return (
       <p className="text-muted-foreground text-sm">
         Group not found, or you may not have access.
@@ -31,7 +53,6 @@ export function GroupAttendancePage() {
     )
   }
 
-  const group = groupQ.data
   const students = studentsQ.data ?? []
 
   return (
@@ -66,14 +87,29 @@ export function GroupAttendancePage() {
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="session-date">Session date</Label>
-        <Input
-          id="session-date"
-          type="date"
-          value={sessionDate}
-          onChange={(e) => setSessionDate(e.target.value)}
-          className="w-[180px]"
-        />
+        <Label htmlFor="session-week">Session week</Label>
+        {curriculum ? (
+          <Select value={sessionDate} onValueChange={setPicked}>
+            <SelectTrigger id="session-week" className="w-[260px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {weeksForCurriculum(curriculum).map((w) => (
+                <SelectItem key={w.week} value={w.date}>
+                  {weekLabel(w.week)} · {w.date}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          <Input
+            id="session-week"
+            type="date"
+            value={sessionDate}
+            onChange={(e) => setPicked(e.target.value)}
+            className="w-[180px]"
+          />
+        )}
       </div>
 
       {students.length === 0 ? (

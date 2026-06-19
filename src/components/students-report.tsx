@@ -4,6 +4,8 @@ import { toast } from 'sonner'
 import { useAttendanceReport } from '@/hooks/use-attendance'
 import { useDeleteStudent } from '@/hooks/use-groups'
 import { exportStudentMatrix } from '@/lib/report'
+import type { ReportCell } from '@/lib/report'
+import { curriculumForClass, weekForDate } from '@/lib/calendar'
 import { ImportStudents } from '@/components/import-admin'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -16,6 +18,13 @@ import {
   TableRow,
 } from '@/components/ui/table'
 
+interface WeekColumn {
+  key: string
+  label: string
+  title: string
+  sort: number
+}
+
 export function StudentsReport({ classFilter }: { classFilter: string }) {
   const [exporting, setExporting] = useState(false)
   const [showImport, setShowImport] = useState(false)
@@ -24,7 +33,7 @@ export function StudentsReport({ classFilter }: { classFilter: string }) {
   const del = useDeleteStudent()
   const report = reportQ.data
 
-  // 搜索(姓名/班级/组)+ 按姓名 a→z
+  // 搜索(姓名/邮箱/班级/组)+ 按姓名 a→z
   const visibleStudents = useMemo(() => {
     const list = report?.students ?? []
     const q = query.trim().toLowerCase()
@@ -41,6 +50,34 @@ export function StudentsReport({ classFilter }: { classFilter: string }) {
       a.full_name.localeCompare(b.full_name, undefined, { sensitivity: 'base', numeric: true }),
     )
   }, [report, query])
+
+  // 把每条记录的日期映射成「周次」(按学生所属课程)，只保留有数据的周列
+  const { columns, cellByStudent } = useMemo(() => {
+    const colMap = new Map<string, WeekColumn>()
+    const byStudent: Record<string, Record<string, ReportCell>> = {}
+    for (const s of visibleStudents) {
+      const cur = curriculumForClass(s.class_name)
+      const dateCells = report?.cells[s.id] ?? {}
+      const dest: Record<string, ReportCell> = {}
+      for (const [dateISO, cell] of Object.entries(dateCells)) {
+        const wk = cur ? weekForDate(cur, dateISO) : null
+        const col: WeekColumn =
+          wk !== null
+            ? { key: `w${wk}`, label: `Wk ${wk}`, title: `Week ${wk} · ${dateISO}`, sort: wk }
+            : {
+                key: `d${dateISO}`,
+                label: dateISO.slice(5),
+                title: dateISO,
+                sort: 1000 + (Date.parse(dateISO) || 0) / 8.64e7,
+              }
+        colMap.set(col.key, col)
+        dest[col.key] = cell
+      }
+      byStudent[s.id] = dest
+    }
+    const columns = [...colMap.values()].sort((a, b) => a.sort - b.sort)
+    return { columns, cellByStudent: byStudent }
+  }, [visibleStudents, report])
 
   async function onExport() {
     setExporting(true)
@@ -103,9 +140,9 @@ export function StudentsReport({ classFilter }: { classFilter: string }) {
                 <TableHead className="whitespace-nowrap">Email</TableHead>
                 <TableHead className="whitespace-nowrap">Class</TableHead>
                 <TableHead className="whitespace-nowrap">Group</TableHead>
-                {report.dates.map((d) => (
-                  <TableHead key={d} className="text-center whitespace-nowrap" title={d}>
-                    {d.slice(5)}
+                {columns.map((c) => (
+                  <TableHead key={c.key} className="text-center whitespace-nowrap" title={c.title}>
+                    {c.label}
                   </TableHead>
                 ))}
               </TableRow>
@@ -114,7 +151,7 @@ export function StudentsReport({ classFilter }: { classFilter: string }) {
               {visibleStudents.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={4 + report.dates.length}
+                    colSpan={4 + columns.length}
                     className="text-muted-foreground text-center text-sm"
                   >
                     No matches.
@@ -139,8 +176,8 @@ export function StudentsReport({ classFilter }: { classFilter: string }) {
                     <TableCell className="text-muted-foreground whitespace-nowrap">{s.email}</TableCell>
                     <TableCell className="text-muted-foreground whitespace-nowrap">{s.class_name}</TableCell>
                     <TableCell className="text-muted-foreground whitespace-nowrap">{s.group_name}</TableCell>
-                    {report.dates.map((d) => {
-                      const cell = report.cells[s.id]?.[d]
+                    {columns.map((c) => {
+                      const cell = cellByStudent[s.id]?.[c.key]
                       const note = cell?.note ?? ''
                       const score = cell?.score ?? null
                       const display =
@@ -152,7 +189,7 @@ export function StudentsReport({ classFilter }: { classFilter: string }) {
                           <span className="text-muted-foreground/40">·</span>
                         )
                       return (
-                        <TableCell key={d} className="text-center tabular-nums">
+                        <TableCell key={c.key} className="text-center tabular-nums">
                           {note ? (
                             <span
                               className="cursor-help underline decoration-dotted underline-offset-2"
@@ -175,8 +212,9 @@ export function StudentsReport({ classFilter }: { classFilter: string }) {
       )}
 
       <p className="text-muted-foreground text-xs">
-        Cells show the Contribution score (0–3); ✎ = has a remark (hover to read); · = not assessed.
-        The exported Excel uses one sheet; each date spans two columns — Score and Remark.
+        Columns are program weeks (Wk N) — hover a column header for its date. Cells show the
+        Contribution score (0–3); ✎ = has a remark (hover to read); · = not assessed. The exported
+        Excel uses one sheet; each week spans two columns — Score and Remark.
       </p>
     </div>
   )

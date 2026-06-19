@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { curriculumForClass, weekForDate } from '@/lib/calendar'
 
 export interface ReportStudent {
   id: string
@@ -79,26 +80,50 @@ export async function fetchReportData(classId?: string): Promise<ReportData> {
   return { students, dates: Array.from(dateSet).sort(), cells }
 }
 
-/** 导出 Excel：sheet 1「Contribution」分数；sheet 2「Remarks」备注。均为 学员 × 周。返回学员数。 */
+/** 导出 Excel：学员 × 周（Wk N）矩阵；每周占 Score / Remark 两列。返回学员数。 */
 export async function exportStudentMatrix(opts: { classId?: string; fileName?: string }): Promise<number> {
-  const { students, dates, cells } = await fetchReportData(opts.classId)
+  const { students, cells } = await fetchReportData(opts.classId)
+
+  // 把日期按各自课程映射成周列，只保留有数据的周。
+  interface Col {
+    key: string
+    label: string
+    sort: number
+  }
+  const colMap = new Map<string, Col>()
+  const cellByStudent: Record<string, Record<string, ReportCell>> = {}
+  for (const s of students) {
+    const cur = curriculumForClass(s.class_name)
+    const dest: Record<string, ReportCell> = {}
+    for (const [dateISO, cell] of Object.entries(cells[s.id] ?? {})) {
+      const wk = cur ? weekForDate(cur, dateISO) : null
+      const col: Col =
+        wk !== null
+          ? { key: `w${wk}`, label: `Wk ${wk}`, sort: wk }
+          : { key: `d${dateISO}`, label: dateISO, sort: 1000 + (Date.parse(dateISO) || 0) / 8.64e7 }
+      colMap.set(col.key, col)
+      dest[col.key] = cell
+    }
+    cellByStudent[s.id] = dest
+  }
+  const cols = [...colMap.values()].sort((a, b) => a.sort - b.sort)
 
   // 动态导入：xlsx 较大，仅在导出时加载。
   const XLSX = await import('xlsx')
 
-  // 两行表头：每个日期占两列（Score / Remark），日期作为合并的上层标题。
+  // 两行表头：每个周占两列（Score / Remark），周作为合并的上层标题。
   const top: (string | number)[] = ['Class', 'Group', 'Student', 'Email']
   const sub: (string | number)[] = ['', '', '', '']
-  for (const d of dates) {
-    top.push(d, '')
+  for (const c of cols) {
+    top.push(c.label, '')
     sub.push('Score', 'Remark')
   }
   const aoa: (string | number)[][] = [top, sub]
   for (const s of students) {
     const row: (string | number)[] = [s.class_name, s.group_name, s.full_name, s.email]
-    for (const d of dates) {
-      const c = cells[s.id]?.[d]
-      row.push(c && c.score !== null ? c.score : '', c?.note ?? '')
+    for (const c of cols) {
+      const cell = cellByStudent[s.id]?.[c.key]
+      row.push(cell && cell.score !== null ? cell.score : '', cell?.note ?? '')
     }
     aoa.push(row)
   }
@@ -106,9 +131,9 @@ export async function exportStudentMatrix(opts: { classId?: string; fileName?: s
   const ws = XLSX.utils.aoa_to_sheet(aoa)
   const merges: { s: { r: number; c: number }; e: { r: number; c: number } }[] = []
   for (let c = 0; c < 4; c++) merges.push({ s: { r: 0, c }, e: { r: 1, c } }) // Class/Group/Student/Email 竖向合并
-  for (let i = 0; i < dates.length; i++) {
+  for (let i = 0; i < cols.length; i++) {
     const c = 4 + i * 2
-    merges.push({ s: { r: 0, c }, e: { r: 0, c: c + 1 } }) // 日期横跨 Score+Remark 两列
+    merges.push({ s: { r: 0, c }, e: { r: 0, c: c + 1 } }) // 周横跨 Score+Remark 两列
   }
   ws['!merges'] = merges
 

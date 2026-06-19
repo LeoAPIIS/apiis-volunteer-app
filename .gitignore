@@ -23,6 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 
-# Design source assets (not bundled; optimized copies live in src/assets/)
+# Design / data source files (not bundled; baked copies live in src/assets|src/lib + migrations)
 /APIIS Brand Guidelines.pdf
 /APIIS Logo.png
+/Curriculum & Calendar19062026.xlsx
