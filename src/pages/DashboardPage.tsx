@@ -35,7 +35,10 @@ export function DashboardPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {groups.map((g) => (
-            <Card key={g.id}>
+            <Card
+              key={g.id}
+              className="border-t-2 border-t-transparent transition-all hover:border-t-brand hover:shadow-md"
+            >
               <CardHeader>
                 <CardTitle className="flex items-center justify-between gap-2 text-base">
                   <span>{g.name}</span>
@@ -52,7 +55,7 @@ export function DashboardPage() {
                     href={g.zoom_link}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
+                    className="text-brand inline-flex items-center gap-1 text-sm hover:underline"
                   >
                     <Video className="size-4" /> Zoom
                   </a>

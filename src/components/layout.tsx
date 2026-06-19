@@ -2,6 +2,7 @@ import { Link, Outlet } from 'react-router-dom'
 import { Bell } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
 import { useUnreadCount } from '@/hooks/use-scheduling'
+import { ApiisLogo } from '@/components/apiis-logo'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -27,10 +28,12 @@ export function Layout() {
 
   return (
     <div className="flex min-h-svh flex-col">
-      <header className="border-b">
+      <header className="bg-background/80 supports-[backdrop-filter]:bg-background/65 sticky top-0 z-40 border-b backdrop-blur">
         <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-4">
-          <Link to="/" className="font-semibold tracking-tight">
-            APIIS Volunteers
+          <Link to="/" className="flex items-center gap-2.5" aria-label="APIIS Volunteers — home">
+            <ApiisLogo className="h-9 w-auto" />
+            <span aria-hidden className="bg-border hidden h-5 w-px sm:block" />
+            <span className="text-muted-foreground hidden text-sm font-medium sm:inline">Volunteers</span>
           </Link>
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" asChild className="relative">

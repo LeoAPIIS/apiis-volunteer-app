@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth, roleHome } from '@/lib/auth'
 import { FullPageSpinner } from '@/components/full-page-spinner'
+import { ApiisLogo } from '@/components/apiis-logo'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -45,11 +46,31 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-svh items-center justify-center p-4">
-      <Card className="w-full max-w-sm">
+    <div className="relative flex min-h-svh items-center justify-center overflow-hidden bg-gradient-to-br from-[#0d2438] via-[#0c3c60] to-[#0a2c49] p-4">
+      {/* 柔光点缀，纯 CSS 渐变、零额外资源 */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-24 -right-24 size-96 rounded-full opacity-25 blur-3xl"
+        style={{ background: 'radial-gradient(closest-side, #1690D0, transparent)' }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-28 -left-24 size-96 rounded-full opacity-20 blur-3xl"
+        style={{ background: 'radial-gradient(closest-side, #7CB518, transparent)' }}
+      />
+
+      <div className="relative z-10 w-full max-w-sm">
+        <div className="mb-6 flex flex-col items-center text-center">
+          <ApiisLogo className="h-24 w-auto" />
+          <p className="mt-4 text-sm text-white/70">
+            21st Century Training. For Christians. For Global Impact.
+          </p>
+        </div>
+
+        <Card className="w-full shadow-xl">
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">APIIS Volunteer Management</CardTitle>
-          <CardDescription>Sign in with your email and password</CardDescription>
+          <CardTitle className="text-xl">Sign in</CardTitle>
+          <CardDescription>Use your APIIS email and password</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="flex flex-col gap-4">
@@ -82,7 +103,10 @@ export function LoginPage() {
             </Button>
           </form>
         </CardContent>
-      </Card>
+        </Card>
+
+        <p className="mt-6 text-center text-xs text-white/45">APIIS Volunteer Management</p>
+      </div>
     </div>
   )
 }
