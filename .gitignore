@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Design source assets (not bundled; optimized copies live in src/assets/)
+/APIIS Brand Guidelines.pdf
+/APIIS Logo.png
