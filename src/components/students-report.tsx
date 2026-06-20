@@ -29,7 +29,8 @@ export function StudentsReport({ classFilter }: { classFilter: string }) {
   const [exporting, setExporting] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const [query, setQuery] = useState('')
-  const reportQ = useAttendanceReport(classFilter === 'all' ? undefined : classFilter)
+  const isAll = classFilter === 'all'
+  const reportQ = useAttendanceReport(isAll ? undefined : classFilter)
   const del = useDeleteStudent()
   const report = reportQ.data
 
@@ -106,12 +107,16 @@ export function StudentsReport({ classFilter }: { classFilter: string }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Input
-          placeholder="Search students…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="max-w-xs"
-        />
+        {isAll ? (
+          <p className="text-muted-foreground text-sm">Select a class above to view attendance and export.</p>
+        ) : (
+          <Input
+            placeholder="Search students…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="max-w-xs"
+          />
+        )}
         <div className="flex items-center gap-2">
           <Button
             variant={showImport ? 'secondary' : 'outline'}
@@ -119,15 +124,23 @@ export function StudentsReport({ classFilter }: { classFilter: string }) {
           >
             <Upload className="size-4" /> Import CSV
           </Button>
-          <Button variant="outline" onClick={() => void onExport()} disabled={exporting}>
-            <Download className="size-4" /> {exporting ? 'Exporting…' : 'Export Excel'}
-          </Button>
+          {!isAll && (
+            <Button variant="outline" onClick={() => void onExport()} disabled={exporting}>
+              <Download className="size-4" /> {exporting ? 'Exporting…' : 'Export Excel'}
+            </Button>
+          )}
         </div>
       </div>
 
       {showImport && <ImportStudents />}
 
-      {reportQ.isLoading ? (
+      {isAll ? (
+        <p className="text-muted-foreground rounded-md border border-dashed p-8 text-center text-sm">
+          Choose a class from the filter above to see its per-week attendance matrix and export it to
+          Excel. The matrix is per class — each class has its own weekly calendar, so weeks only line up
+          within a single class.
+        </p>
+      ) : reportQ.isLoading ? (
         <p className="text-muted-foreground text-sm">Loading…</p>
       ) : !report || report.students.length === 0 ? (
         <p className="text-muted-foreground text-sm">No students in this class yet.</p>
@@ -211,11 +224,13 @@ export function StudentsReport({ classFilter }: { classFilter: string }) {
         </div>
       )}
 
-      <p className="text-muted-foreground text-xs">
-        Columns are program weeks (Wk N) — hover a column header for its date. Cells show the
-        Contribution score (0–3); ✎ = has a remark (hover to read); · = not assessed. The exported
-        Excel uses one sheet; each week spans two columns — Score and Remark.
-      </p>
+      {!isAll && (
+        <p className="text-muted-foreground text-xs">
+          Columns are program weeks (Wk N) — hover a column header for its date. Cells show the
+          Contribution score (0–3); ✎ = has a remark (hover to read); · = not assessed. The exported
+          Excel uses one sheet; each week spans two columns — Score and Remark.
+        </p>
+      )}
     </div>
   )
 }

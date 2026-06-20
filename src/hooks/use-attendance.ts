@@ -46,10 +46,12 @@ export function useSaveAttendance() {
   })
 }
 
-/** 「学员 × 周」报表数据（管理员专用，可按班级筛选）。 */
+/** 「学员 × 周」报表数据（管理员专用，按单个班级）。
+ *  矩阵只在选定具体班级时才有意义（各班周历不同），未选班级时不拉数据。 */
 export function useAttendanceReport(classId: string | undefined) {
   return useQuery({
     queryKey: ['attendance-report', classId ?? 'all'],
     queryFn: () => fetchReportData(classId),
+    enabled: !!classId,
   })
 }
