@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { useSaveAttendance } from '@/hooks/use-attendance'
 import type { AttendanceUpsert } from '@/hooks/use-attendance'
-import type { AttendanceRecord, Student } from '@/types'
+import type { AttendanceRecord } from '@/types'
+import type { GroupStudent } from '@/hooks/use-groups'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -27,7 +28,7 @@ interface RowState {
 }
 
 interface Props {
-  students: Student[]
+  students: GroupStudent[]
   existing: AttendanceRecord[]
   groupId: string
   sessionDate: string
@@ -73,8 +74,8 @@ export function AttendanceForm({ students, existing, groupId, sessionDate, volun
       student_id: s.id,
       volunteer_id: volunteerId,
       session_date: sessionDate,
-      contribution: rows[s.id].contribution,
-      notes: rows[s.id].notes,
+      contribution: rows[s.id]?.contribution ?? null,
+      notes: rows[s.id]?.notes ?? '',
     }))
     try {
       await save.mutateAsync(payload)

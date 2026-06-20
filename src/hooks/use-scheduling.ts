@@ -20,6 +20,23 @@ export function useMyAvailability(volunteerId: string | undefined, week: string)
   })
 }
 
+/** 下周一是否为真实上课日（在 class_sessions 内）。用于休息周隐藏"可用性"询问。 */
+export function useIsSessionWeek(week: string) {
+  return useQuery({
+    queryKey: ['is-session-week', week],
+    enabled: !!week,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('class_sessions')
+        .select('session_date')
+        .eq('session_date', week)
+        .limit(1)
+      if (error) throw error
+      return (data?.length ?? 0) > 0
+    },
+  })
+}
+
 export function useSetAvailability(volunteerId: string, week: string) {
   const qc = useQueryClient()
   return useMutation({

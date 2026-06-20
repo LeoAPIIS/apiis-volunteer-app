@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
-import type { Group, Student } from '@/types'
+import type { Group } from '@/types'
 
 export type GroupWithCohort = Group & { cohort: { name: string } | null }
 
@@ -89,19 +89,21 @@ export function useGroup(groupId: string | undefined) {
   })
 }
 
-/** 某小组的学员。 */
+/** 志愿者考勤页用：只含 id + 姓名。经 get_group_students RPC 读取，email 不出库到志愿者端。 */
+export interface GroupStudent {
+  id: string
+  full_name: string
+}
+
+/** 某小组的学员名单（id + 姓名，不含 email）。 */
 export function useStudents(groupId: string | undefined) {
   return useQuery({
     queryKey: ['students', groupId],
     enabled: !!groupId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('students')
-        .select('*')
-        .eq('group_id', groupId as string)
-        .order('full_name')
+      const { data, error } = await supabase.rpc('get_group_students', { p_group_id: groupId })
       if (error) throw error
-      return (data ?? []) as Student[]
+      return (data ?? []) as GroupStudent[]
     },
   })
 }
