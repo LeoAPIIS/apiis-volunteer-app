@@ -13,9 +13,9 @@ do $$ begin
   end if;
 end $$;
 
--- 周六 12:00 UTC（= UTC+8 周六 20:00）：为下周创建可用性记录 + 提醒（true = 同时发邮件）
+-- 周五 12:00 UTC（= UTC+8 周五 20:00）：为下周创建可用性记录 + 提醒（true = 同时发邮件）
 select cron.schedule(
-  'weekly-availability-check', '0 12 * * 6',
+  'weekly-availability-check', '0 12 * * 5',
   $$ select public.run_weekly_availability_check(true); $$
 );
 
