@@ -4,6 +4,7 @@ import { ProtectedRoute } from '@/components/protected-route'
 import { RequireRole } from '@/components/require-role'
 import { Layout } from '@/components/layout'
 import { LoginPage } from '@/pages/LoginPage'
+import { ResetPasswordPage } from '@/pages/ResetPasswordPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { AdminPage } from '@/pages/AdminPage'
 import { GroupAttendancePage } from '@/pages/GroupAttendancePage'
@@ -20,6 +21,7 @@ function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route element={<ProtectedRoute />}>
         <Route path="/" element={<HomeRedirect />} />
         <Route element={<Layout />}>

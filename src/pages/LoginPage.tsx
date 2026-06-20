@@ -2,7 +2,9 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Navigate } from 'react-router-dom'
 import { Eye, EyeOff } from 'lucide-react'
+import { toast } from 'sonner'
 import { useAuth, roleHome } from '@/lib/auth'
+import { supabase } from '@/lib/supabase'
 import { FullPageSpinner } from '@/components/full-page-spinner'
 import { ApiisLogo } from '@/components/apiis-logo'
 import { Button } from '@/components/ui/button'
@@ -39,6 +41,21 @@ export function LoginPage() {
       setSubmitting(false)
     }
     // 成功后 auth 状态更新，上方的 <Navigate> 会自动跳转到对应首页
+  }
+
+  async function onForgot() {
+    if (!email) {
+      toast.error('Enter your email above first, then tap “Forgot password?”')
+      return
+    }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+    if (error) {
+      toast.error(translateAuthError(error.message))
+      return
+    }
+    toast.success('If that email has an account, a password reset link is on its way.')
   }
 
   return (
@@ -105,6 +122,13 @@ export function LoginPage() {
                 </button>
               </div>
             </div>
+            <button
+              type="button"
+              onClick={() => void onForgot()}
+              className="text-brand -mt-1 self-end text-xs hover:underline"
+            >
+              Forgot password?
+            </button>
             {error && <p className="text-destructive text-sm">{error}</p>}
             <Button type="submit" disabled={submitting} className="w-full">
               {submitting ? 'Signing in…' : 'Sign in'}
