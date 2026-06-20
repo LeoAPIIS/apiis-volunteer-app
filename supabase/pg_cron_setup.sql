@@ -12,7 +12,8 @@ declare j text;
 begin
   foreach j in array array[
     'weekly-availability-check', 'summarize-coverage',
-    'availability-mmin6', 'availability-mmin7', 'coverage-mmin6', 'coverage-mmin7'
+    'availability-mmin6', 'availability-mmin7', 'coverage-mmin6', 'coverage-mmin7',
+    'expire-coverage'
   ] loop
     if exists (select 1 from cron.job where jobname = j) then perform cron.unschedule(j); end if;
   end loop;
@@ -29,6 +30,10 @@ select cron.schedule('coverage-mmin6', '0 12 * * 6',      -- 周六 20:00 UTC+8 
   $$ select public.run_summarize_coverage(true, 'MMin 6'); $$);
 select cron.schedule('coverage-mmin7', '0 12 * * 0',      -- 周日 20:00 UTC+8 → 发 MMin 7 志愿者
   $$ select public.run_summarize_coverage(true, 'MMin 7'); $$);
+
+-- 每周三清除上周的临时补位分配（被补周一已过去的）
+select cron.schedule('expire-coverage', '0 1 * * 3',      -- 周三 09:00 UTC+8
+  $$ select public.expire_coverage_assignments(); $$);
 
 -- 查看：select jobname, schedule, active from cron.job order by jobname;
 -- 取消单个：select cron.unschedule('availability-mmin6');

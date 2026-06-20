@@ -42,6 +42,7 @@ export interface Assignment {
   group_id: string
   volunteer_id: string
   assigned_at: string
+  coverage_week: string | null // null = 常规分配；非 null = 该周一的临时补位分配
 }
 
 export interface AttendanceRecord {
