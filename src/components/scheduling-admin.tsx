@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { TriangleAlert } from 'lucide-react'
 import { toast } from 'sonner'
 import { nextWeekMonday } from '@/lib/date'
 import {
@@ -80,9 +81,44 @@ export function SchedulingAdmin() {
   const unavailable = avail.filter((a) => a.is_available === false).length
   const noResponse = avail.filter((a) => a.is_available === null).length
   const coverage = coverQ.data ?? []
+  const openCoverage = coverage.filter((c) => c.status === 'open').length
+  const needsAttention = !isBreak && (openCoverage > 0 || noResponse > 0)
+  const allClear = !isBreak && avail.length > 0 && openCoverage === 0 && noResponse === 0
 
   return (
     <div className="flex flex-col gap-6">
+      {needsAttention && (
+        <Card className="border-amber-400/60 bg-amber-50 dark:bg-amber-950/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base text-amber-700 dark:text-amber-400">
+              <TriangleAlert className="size-4" /> Action needed — week of {week}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-1.5 text-sm">
+            {openCoverage > 0 && (
+              <p>
+                <b>{openCoverage}</b> coverage request{openCoverage > 1 ? 's' : ''} still{' '}
+                <b>unclaimed</b> — assign someone in <b>Groups &amp; Assignments</b> if no volunteer
+                claims it.
+              </p>
+            )}
+            {noResponse > 0 && (
+              <p>
+                <b>{noResponse}</b> volunteer{noResponse > 1 ? 's' : ''} haven&apos;t responded —
+                non-responders don&apos;t trigger a coverage request, so follow up if needed.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+      {allClear && (
+        <Card className="border-green-500/40">
+          <CardContent className="py-4 text-sm text-green-700 dark:text-green-400">
+            ✓ Nothing to action this week — no unclaimed coverage and everyone has responded.
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Reminder settings</CardTitle>
