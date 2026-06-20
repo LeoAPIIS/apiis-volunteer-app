@@ -6,6 +6,7 @@ import { GroupAssignmentCard } from '@/components/group-assignment-card'
 import { StudentsReport } from '@/components/students-report'
 import { SchedulingAdmin } from '@/components/scheduling-admin'
 import { VolunteersReport } from '@/components/volunteers-report'
+import { Spinner } from '@/components/spinner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -23,7 +24,7 @@ function AssignmentsTab({ classFilter }: { classFilter: string }) {
   const assignmentsQ = useAssignments()
 
   if (groupsQ.isLoading || volunteersQ.isLoading || assignmentsQ.isLoading) {
-    return <p className="text-muted-foreground text-sm">Loading…</p>
+    return <Spinner label="Loading groups & assignments…" />
   }
   const volunteers = volunteersQ.data ?? []
   const assignments = assignmentsQ.data ?? []
@@ -51,7 +52,7 @@ function AssignmentsTab({ classFilter }: { classFilter: string }) {
 
 function RecordsTab({ classFilter }: { classFilter: string }) {
   const groupsQ = useAllGroups()
-  if (groupsQ.isLoading) return <p className="text-muted-foreground text-sm">Loading…</p>
+  if (groupsQ.isLoading) return <Spinner />
   const groups = (groupsQ.data ?? []).filter(
     (g) => classFilter === 'all' || g.cohort_id === classFilter,
   )

@@ -8,6 +8,7 @@ import { exportStudentMatrix } from '@/lib/report'
 import type { ReportCell } from '@/lib/report'
 import { curriculumForClass, weekForDate } from '@/lib/calendar'
 import { ImportStudents } from '@/components/import-admin'
+import { Spinner } from '@/components/spinner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -146,7 +147,7 @@ export function StudentsReport({ classFilter }: { classFilter: string }) {
           within a single class.
         </p>
       ) : reportQ.isLoading ? (
-        <p className="text-muted-foreground text-sm">Loading…</p>
+        <Spinner />
       ) : !report || report.students.length === 0 ? (
         <p className="text-muted-foreground text-sm">No students in this class yet.</p>
       ) : (

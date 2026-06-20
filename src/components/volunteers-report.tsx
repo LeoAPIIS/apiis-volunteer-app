@@ -11,6 +11,7 @@ import {
 } from '@/hooks/use-assignments'
 import { useAllGroups } from '@/hooks/use-groups'
 import { ImportVolunteers } from '@/components/import-admin'
+import { Spinner } from '@/components/spinner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -100,7 +101,7 @@ export function VolunteersReport({ classFilter }: { classFilter: string }) {
     )
   }
 
-  if (isLoading) return <p className="text-muted-foreground text-sm">Loading…</p>
+  if (isLoading) return <Spinner />
 
   return (
     <div className="flex flex-col gap-3">
