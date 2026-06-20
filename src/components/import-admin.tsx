@@ -208,22 +208,41 @@ export function ImportVolunteers() {
       if (!email) {
         errors.push(`${name || '(no name)'}: missing email — skipped`)
       } else {
-        let groupId: string | null = null
+        // 支持一个志愿者多组：Group 写成 "17,18" / "17;18" / "17, 18" 等
+        const groupIds: string[] = []
         if (classCell && groupCell) {
-          groupId = resolveGroupId(classes, groups, classCell, groupCell)
-          if (!groupId) {
-            errors.push(`${name || email}: class/group "${classCell} / ${groupCell}" not found — created without assignment`)
+          for (const tok of groupCell
+            .split(/[,;/]+/)
+            .map((t) => t.trim())
+            .filter(Boolean)) {
+            const gid = resolveGroupId(classes, groups, classCell, tok)
+            if (gid) groupIds.push(gid)
+            else errors.push(`${name || email}: class/group "${classCell} / ${tok}" not found`)
           }
         }
-        const { error } = await supabase.rpc('admin_import_volunteer', {
+        const { data: uid, error } = await supabase.rpc('admin_import_volunteer', {
           p_email: email,
           p_full_name: name,
           p_phone: null,
           p_password: password,
-          p_group_id: groupId,
+          p_group_id: groupIds[0] ?? null,
         })
-        if (error) errors.push(`${email}: ${error.message}`)
-        else ok++
+        if (error) {
+          errors.push(`${email}: ${error.message}`)
+        } else {
+          ok++
+          // 其余小组逐个追加分配（账号已由 RPC 建好/找到）
+          if (uid && groupIds.length > 1) {
+            const extra = groupIds.slice(1).map((gid) => ({
+              group_id: gid,
+              volunteer_id: uid as string,
+            }))
+            const { error: aErr } = await supabase
+              .from('assignments')
+              .upsert(extra, { onConflict: 'group_id,volunteer_id' })
+            if (aErr) errors.push(`${email}: extra groups — ${aErr.message}`)
+          }
+        }
       }
       setProgress({ done: i + 1, total: rows.length })
     }
@@ -245,8 +264,9 @@ export function ImportVolunteers() {
       <CardContent className="flex flex-col gap-3">
         <p className="text-muted-foreground text-sm">
           One row per volunteer: <code>Name, Email, Class, Group</code> (keep a header row — columns are
-          matched by name). If Class + Group are given, the volunteer is assigned to that group. New
-          accounts get the temporary password below; re-importing an existing email just updates them.
+          matched by name). A volunteer can have <b>several groups</b> in one cell — write{' '}
+          <code>&quot;17,18&quot;</code> (quoted) or <code>17;18</code>. New accounts get the temporary
+          password below; re-importing an existing email just updates them.
         </p>
         <div className="flex flex-col gap-1">
           <Label htmlFor="temp-pw">Temporary password (for new accounts)</Label>
