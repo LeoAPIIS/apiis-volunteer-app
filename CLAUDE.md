@@ -42,7 +42,7 @@ npm run preview    # serve the production build
 
 **Reports/export:** `src/lib/report.ts` builds the per-student × per-week matrix and Excel export. `xlsx` is imported **dynamically** (`await import('xlsx')`, loaded from a CDN tarball pinned in package.json) to keep it out of the main bundle — preserve this.
 
-**Email + scheduling:** Reminders are pure SQL (`run_weekly_availability_check`, `run_summarize_coverage`) invoked by **pg_cron**; email is sent from SQL via **pg_net → Resend** (no Edge Function / CLI). These functions have a `p_send_email boolean` overload — cron passes `true`, the admin "Run now" buttons pass `false` (in-app notification only, to avoid accidental mass email).
+**Email + scheduling:** Reminders are pure SQL (`run_weekly_availability_check`, `run_summarize_coverage`) invoked by **pg_cron**; email is sent from SQL via **pg_net → Resend** (no Edge Function / CLI). Signature is `(p_send_email boolean, p_curriculum text)`: cron passes `true` + a curriculum (`'MMin 6'`/`'MMin 7'`) to target only that curriculum's volunteers on its own day (4 jobs — see `pg_cron_setup.sql`); the admin "Run now" buttons pass neither (in-app only, all volunteers). `p_curriculum` null = all; otherwise filters volunteers by assignment to a cohort named `'<curriculum>%'` and gates on that curriculum's session weeks.
 
 ## Database / migrations workflow
 
