@@ -26,6 +26,7 @@ export function LoginPage() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [resetting, setResetting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   if (loading) return <FullPageSpinner />
@@ -44,13 +45,16 @@ export function LoginPage() {
   }
 
   async function onForgot() {
+    if (resetting) return
     if (!email) {
       toast.error('Enter your email above first, then tap “Forgot password?”')
       return
     }
+    setResetting(true)
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
     })
+    setResetting(false)
     if (error) {
       toast.error(translateAuthError(error.message))
       return
@@ -125,9 +129,10 @@ export function LoginPage() {
             <button
               type="button"
               onClick={() => void onForgot()}
-              className="text-brand -mt-1 self-end text-xs hover:underline"
+              disabled={resetting}
+              className="text-brand -mt-1 self-end text-xs hover:underline disabled:opacity-60"
             >
-              Forgot password?
+              {resetting ? 'Sending reset link…' : 'Forgot password?'}
             </button>
             {error && <p className="text-destructive text-sm">{error}</p>}
             <Button type="submit" disabled={submitting} className="w-full">
