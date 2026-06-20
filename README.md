@@ -59,12 +59,11 @@ Run in order:
 
 1. **Schema + RLS + functions** — paste **`supabase/_apply_all.sql`** (all migrations combined) and Run.
    *(Already-deployed project: run only the new files in `supabase/migrations/`, in filename order.)*
-2. **Seed test data** *(optional)* — **`supabase/seed.sql`** (test accounts + a few sample students).
-3. **Super admin** — edit & run **`supabase/make_admin.sql`** to create/promote `itsupport@apiis.org`
+2. **Super admin** — edit & run **`supabase/make_admin.sql`** to create/promote `itsupport@apiis.org`
    as **super_admin** (only needed if that account doesn't already exist — the super-admin migration
    promotes it automatically if it does).
-4. **Email reminders** *(optional)* — edit & run **`supabase/email_setup.sql`** (Resend key in Vault).
-5. **Scheduling** *(optional)* — **`supabase/pg_cron_setup.sql`** (Saturday/Sunday jobs that also email).
+3. **Email reminders** *(optional)* — edit & run **`supabase/email_setup.sql`** (Resend key in Vault).
+4. **Scheduling** *(optional)* — **`supabase/pg_cron_setup.sql`** (Saturday/Sunday jobs that also email).
 
 Migrations live in `supabase/migrations/`. CLI alternative: `supabase link` + `supabase db push`.
 
@@ -93,22 +92,15 @@ After deploying:
 
 ---
 
-## Test accounts (from `seed.sql` / `make_admin.sql`)
-
-| Email | Role | Password |
-|-------|------|----------|
-| itsupport@apiis.org | super_admin | (set in `make_admin.sql`) |
-| admin@apiis.test | admin | apiis1234 |
-| volunteer1@apiis.test / volunteer2@apiis.test | volunteer | apiis1234 |
-
-> Remove test accounts in production.
+> The only account is the super admin **`itsupport@apiis.org`** (created/promoted via `make_admin.sql`).
+> Everyone else is created by importing the real volunteer CSV.
 
 ## End-to-end test checklist
 
 1. **Super admin** (itsupport) → Admin Console → *Volunteers*: promote a volunteer to **admin**
    (shield icon — visible only to super admin).
-2. **Admin** → *Import*: import students (`Name, Class, Group, Email`) and volunteers
-   (`Name, Email, Phone, Class, Group`). Re-importing the same email **updates** instead of duplicating.
+2. **Admin** → *Students* / *Volunteers* → **Import CSV**: import students (`Name, Class, Group, Email`)
+   and volunteers (`Name, Email, Phone, Class, Group`). Re-importing the same email **updates** instead of duplicating.
 3. **Admin** → *Groups & Assignments*: assign a volunteer to a group (or it was auto-assigned on import).
 4. **Volunteer** → a group → set **Contribution (0–3)** + remark → Save.
 5. **Admin** → *Students* (pick the class): the score/remark shows in the matrix; **Export Excel**.
@@ -125,9 +117,9 @@ src/
                 scheduling, import, error boundary, ui/ (shadcn)
   pages/        Login, Dashboard, Admin, GroupAttendance, Notifications, Account
   hooks/        use-groups, use-attendance, use-assignments, use-scheduling
-  lib/          supabase client, auth context (roles), report/export, csv, date helpers
+  lib/          supabase client, auth context (roles), report/export, csv, date & calendar helpers
   types/        shared TypeScript types
 supabase/
   migrations/   schema, RLS, functions (apply in order; or use _apply_all.sql)
-  seed.sql · make_admin.sql · email_setup.sql · pg_cron_setup.sql
+  make_admin.sql · email_setup.sql · pg_cron_setup.sql · cleanup_test_data.sql
 ```

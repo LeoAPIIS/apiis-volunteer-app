@@ -9,6 +9,45 @@ export interface ReportStudent {
   class_name: string
 }
 
+export interface VolunteerExportRow {
+  full_name: string
+  email: string
+  role: string
+  assigned_groups: number
+  sessions_recorded: number
+  last_active: string | null
+  coverage_count: number
+}
+
+/** 导出志愿者活跃度为单表 Excel（列与页面表格一致）。返回导出行数。 */
+export async function exportVolunteers(
+  rows: VolunteerExportRow[],
+  fileName = 'volunteers.xlsx',
+): Promise<number> {
+  const roleLabel = (r: string) =>
+    r === 'super_admin' ? 'Super Admin' : r === 'admin' ? 'Admin' : 'Volunteer'
+
+  // 动态导入：xlsx 较大，仅在导出时加载。
+  const XLSX = await import('xlsx')
+  const aoa: (string | number)[][] = [
+    ['Name', 'Email', 'Role', 'Assigned groups', 'Sessions attended', 'Last active', 'Coverage given'],
+    ...rows.map((v) => [
+      v.full_name,
+      v.email ?? '',
+      roleLabel(v.role),
+      v.assigned_groups,
+      v.sessions_recorded,
+      v.last_active ?? '',
+      v.coverage_count,
+    ]),
+  ]
+  const ws = XLSX.utils.aoa_to_sheet(aoa)
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Volunteers')
+  XLSX.writeFile(wb, fileName)
+  return rows.length
+}
+
 export interface ReportCell {
   score: number | null // contribution 0-3
   note: string // 志愿者备注 / remark

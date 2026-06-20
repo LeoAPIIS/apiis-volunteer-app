@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
-import { Lock, ShieldCheck, ShieldOff, Trash2, Upload } from 'lucide-react'
+import { Download, Lock, ShieldCheck, ShieldOff, Trash2, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuth } from '@/lib/auth'
+import { exportVolunteers } from '@/lib/report'
 import {
   useAssignments,
   useDeleteVolunteer,
@@ -36,6 +37,7 @@ export function VolunteersReport({ classFilter }: { classFilter: string }) {
   const setRole = useSetUserRole()
   const [query, setQuery] = useState('')
   const [showImport, setShowImport] = useState(false)
+  const [exporting, setExporting] = useState(false)
 
   // 按班级筛选 → 搜索(姓名)→ 按姓名 a→z
   const rows = useMemo(() => {
@@ -61,6 +63,18 @@ export function VolunteersReport({ classFilter }: { classFilter: string }) {
       a.full_name.localeCompare(b.full_name, undefined, { sensitivity: 'base', numeric: true }),
     )
   }, [data, assignmentsQ.data, groupsQ.data, classFilter, query])
+
+  async function onExport() {
+    setExporting(true)
+    try {
+      const n = await exportVolunteers(rows, 'volunteers.xlsx')
+      toast.success(`Exported ${n} volunteer(s)`)
+    } catch (e) {
+      toast.error(`Export failed: ${(e as Error).message}`)
+    } finally {
+      setExporting(false)
+    }
+  }
 
   function onDelete(id: string, name: string) {
     if (!window.confirm(`Delete "${name}"? This removes their account and assignments.`)) return
@@ -97,12 +111,17 @@ export function VolunteersReport({ classFilter }: { classFilter: string }) {
           onChange={(e) => setQuery(e.target.value)}
           className="max-w-xs"
         />
-        <Button
-          variant={showImport ? 'secondary' : 'outline'}
-          onClick={() => setShowImport((v) => !v)}
-        >
-          <Upload className="size-4" /> Import CSV
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant={showImport ? 'secondary' : 'outline'}
+            onClick={() => setShowImport((v) => !v)}
+          >
+            <Upload className="size-4" /> Import CSV
+          </Button>
+          <Button variant="outline" onClick={() => void onExport()} disabled={exporting || rows.length === 0}>
+            <Download className="size-4" /> {exporting ? 'Exporting…' : 'Export Excel'}
+          </Button>
+        </div>
       </div>
 
       {showImport && <ImportVolunteers />}

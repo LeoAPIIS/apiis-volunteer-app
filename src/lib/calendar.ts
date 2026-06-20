@@ -155,6 +155,21 @@ const DATE_TO_WEEK: Record<Curriculum, Record<string, number>> = {
   'MMin 7': Object.fromEntries(CALENDAR['MMin 7'].map((w) => [w.date, w.week])),
 }
 
+/** ISO 日期加 n 天（按 UTC 计算，避开时区偏移）。 */
+function addDaysISO(iso: string, n: number): string {
+  const [y, m, d] = iso.split('-').map(Number)
+  const dt = new Date(Date.UTC(y, m - 1, d))
+  dt.setUTCDate(dt.getUTCDate() + n)
+  return dt.toISOString().slice(0, 10)
+}
+
+/** 把任意日期规整到所在自然周的周一（ISO）。 */
+function mondayOfWeekISO(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number)
+  const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay() // 0=周日 … 6=周六
+  return addDaysISO(iso, -((dow + 6) % 7))
+}
+
 /** 班级名 → 课程体系（名字含 "MMin 7"/"MMin 6"）。无法识别返回 null。 */
 export function curriculumForClass(className: string | null | undefined): Curriculum | null {
   if (!className) return null
@@ -167,14 +182,29 @@ export function weeksForCurriculum(c: Curriculum): WeekDate[] {
   return CALENDAR[c]
 }
 
-/** 周次 → 该课程的上课日期。 */
+/** 周次 → 该课程的上课日期（周一锚点）。 */
 export function dateForWeek(c: Curriculum, week: number): string | undefined {
   return CALENDAR[c].find((w) => w.week === week)?.date
 }
 
-/** 上课日期 → 周次（不是上课日返回 null）。 */
+/** 班级名 → 上课日相对周一的天数偏移：名字含 "Tuesday" 的班 +1，其余（含周一班）0。 */
+export function weekdayOffsetForClass(className: string | null | undefined): number {
+  return className && className.toLowerCase().includes('tuesday') ? 1 : 0
+}
+
+/** 某班某周的实际上课日期：课程周一锚点 + 班级星期偏移（周二班 +1 天）。 */
+export function sessionDateForWeek(
+  c: Curriculum,
+  week: number,
+  className: string | null | undefined,
+): string | undefined {
+  const monday = dateForWeek(c, week)
+  return monday ? addDaysISO(monday, weekdayOffsetForClass(className)) : undefined
+}
+
+/** 上课日期 → 周次：先规整到所在周的周一再查，兼容周一/周二班与历史数据。不在课表内返回 null。 */
 export function weekForDate(c: Curriculum, dateISO: string): number | null {
-  return DATE_TO_WEEK[c][dateISO] ?? null
+  return DATE_TO_WEEK[c][mondayOfWeekISO(dateISO)] ?? null
 }
 
 /** 标签：week 0 显示 Orientation，其余 Week N。 */

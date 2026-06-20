@@ -7,7 +7,7 @@ import { useAttendance } from '@/hooks/use-attendance'
 import {
   curriculumForClass,
   currentWeek,
-  dateForWeek,
+  sessionDateForWeek,
   weekLabel,
   weeksForCurriculum,
 } from '@/lib/calendar'
@@ -36,10 +36,13 @@ export function GroupAttendancePage() {
   const studentsQ = useStudents(groupId)
 
   const group = groupQ.data
-  const curriculum = curriculumForClass(group?.cohort?.name)
+  const className = group?.cohort?.name ?? null
+  const curriculum = curriculumForClass(className)
   const today = todayLocal()
-  // 默认选中“当前/最近一周”；无法识别课程时退回到普通日期选择
-  const defaultDate = curriculum ? dateForWeek(curriculum, currentWeek(curriculum, today)) : today
+  // 默认选中“当前/最近一周”；周二班的日期 = 周一锚点 +1 天；无法识别课程时退回普通日期选择
+  const defaultDate = curriculum
+    ? sessionDateForWeek(curriculum, currentWeek(curriculum, today), className)
+    : today
   const sessionDate = picked ?? defaultDate ?? today
 
   const attendanceQ = useAttendance(groupId, sessionDate)
@@ -94,11 +97,14 @@ export function GroupAttendancePage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {weeksForCurriculum(curriculum).map((w) => (
-                <SelectItem key={w.week} value={w.date}>
-                  {weekLabel(w.week)} · {w.date}
-                </SelectItem>
-              ))}
+              {weeksForCurriculum(curriculum).map((w) => {
+                const d = sessionDateForWeek(curriculum, w.week, className) ?? w.date
+                return (
+                  <SelectItem key={w.week} value={d}>
+                    {weekLabel(w.week)} · {d}
+                  </SelectItem>
+                )
+              })}
             </SelectContent>
           </Select>
         ) : (
