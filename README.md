@@ -11,14 +11,14 @@ training program.
 - **Students report (admin)**: per-student × per-week matrix, filter by class, one-click **Excel
   export** (single sheet; each session date spans a *Score* and a *Remark* column).
 - **Volunteers report (admin)**: per-user attendance/coverage activity; promote/demote and delete by role.
-- **CSV import (admin)**: students (`Name, Class, Group, Email` — **email is the unique key**) and
+- **CSV import (super admin only)**: students (`Name, Class, Group, Email` — **email is the unique key**) and
   volunteers (`Name, Email, Phone, Class, Group` — optional class/group auto-assigns; shared temp password).
 - **Weekly availability & coverage**: volunteers confirm availability for the upcoming week;
   unavailable groups become **coverage requests** other volunteers can claim. In-app notifications +
   **email** (Resend), scheduled with **pg_cron**, skipping term-break weeks.
 - **Roles (3 tiers)** — enforced by Supabase RLS + SECURITY DEFINER functions:
-  - **super_admin** — appoint/remove admins, delete anyone; cannot be deleted/demoted by others.
-  - **admin** — day-to-day management; can delete volunteers only; cannot change roles.
+  - **super_admin** — appoint/remove admins; **import & delete** students/volunteers; delete anyone; cannot be deleted/demoted by others.
+  - **admin** — day-to-day management (assignments, attendance, reports/export); **cannot import, delete users, or change roles**.
   - **volunteer** — records attendance, answers availability, claims coverage.
 - **Account**: any user can change their own password (top-right menu → Account).
 
@@ -99,15 +99,15 @@ After deploying:
 
 1. **Super admin** (itsupport) → Admin Console → *Volunteers*: promote a volunteer to **admin**
    (shield icon — visible only to super admin).
-2. **Admin** → *Students* / *Volunteers* → **Import CSV**: import students (`Name, Class, Group, Email`)
+2. **Super admin** → *Students* / *Volunteers* → **Import CSV**: import students (`Name, Class, Group, Email`)
    and volunteers (`Name, Email, Phone, Class, Group`). Re-importing the same email **updates** instead of duplicating.
 3. **Admin** → *Groups & Assignments*: assign a volunteer to a group (or it was auto-assigned on import).
 4. **Volunteer** → a group → set **Contribution (0–3)** + remark → Save.
 5. **Admin** → *Students* (pick the class): the score/remark shows in the matrix; **Export Excel**.
 6. **Admin** → *Scheduling* → **Run weekly availability check**; a volunteer answers **No**;
    **Run coverage summary** → that group becomes an open coverage request; another volunteer claims it.
-7. **Admin** can delete a **volunteer**; only **super admin** can delete/demote an **admin**;
-   nobody can delete a **super admin** or their own account.
+7. Only a **super admin** can import or delete students/volunteers and promote/demote admins;
+   nobody can delete a **super admin** or their own account. Admins manage assignments, attendance & reports.
 
 ## Project structure
 

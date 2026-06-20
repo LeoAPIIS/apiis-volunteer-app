@@ -25,7 +25,7 @@ npm run preview    # serve the production build
 - **Row Level Security** policies on every table.
 - **`SECURITY DEFINER` functions** (RPCs) gated by `is_admin()` / `is_super_admin()` for anything privileged (creating/deleting/importing users, role changes, the weekly reminder jobs, coverage claiming). UI role checks are for UX only; never assume they enforce anything.
 
-**Roles (3 tiers):** `super_admin` > `admin` > `volunteer`. `is_admin()` returns true for both admin and super_admin. Only super_admin can change roles or delete an admin; `itsupport@apiis.org` is the super_admin and is protected from deletion/demotion.
+**Roles (3 tiers):** `super_admin` > `admin` > `volunteer`. `is_admin()` returns true for both admin and super_admin. **Only super_admin** can change roles, import (students/volunteers), or delete students/volunteers (RLS `is_super_admin()` on `students` writes + the `admin_import_volunteer`/`admin_delete_volunteer` RPCs). Admins do day-to-day work (assignments, attendance, reports/export). `itsupport@apiis.org` is the super_admin and is protected from deletion/demotion.
 
 **Data flow:** TanStack Query hooks in `src/hooks/` (`use-groups`, `use-attendance`, `use-assignments`, `use-scheduling`) wrap all Supabase calls and own the query keys / invalidation. Auth/session/profile lives in `src/lib/auth.tsx` (`useAuth`, `roleHome(role)`); route protection in `src/components/protected-route.tsx` + `require-role.tsx`.
 

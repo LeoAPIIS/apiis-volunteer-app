@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Download, Trash2, Upload } from 'lucide-react'
 import { toast } from 'sonner'
+import { useAuth } from '@/lib/auth'
 import { useAttendanceReport } from '@/hooks/use-attendance'
 import { useDeleteStudent } from '@/hooks/use-groups'
 import { exportStudentMatrix } from '@/lib/report'
@@ -33,6 +34,8 @@ export function StudentsReport({ classFilter }: { classFilter: string }) {
   const reportQ = useAttendanceReport(isAll ? undefined : classFilter)
   const del = useDeleteStudent()
   const report = reportQ.data
+  const { profile } = useAuth()
+  const iAmSuper = profile?.role === 'super_admin'
 
   // 搜索(姓名/邮箱/班级/组)+ 按姓名 a→z
   const visibleStudents = useMemo(() => {
@@ -118,12 +121,14 @@ export function StudentsReport({ classFilter }: { classFilter: string }) {
           />
         )}
         <div className="flex items-center gap-2">
-          <Button
-            variant={showImport ? 'secondary' : 'outline'}
-            onClick={() => setShowImport((v) => !v)}
-          >
-            <Upload className="size-4" /> Import CSV
-          </Button>
+          {iAmSuper && (
+            <Button
+              variant={showImport ? 'secondary' : 'outline'}
+              onClick={() => setShowImport((v) => !v)}
+            >
+              <Upload className="size-4" /> Import CSV
+            </Button>
+          )}
           {!isAll && (
             <Button variant="outline" onClick={() => void onExport()} disabled={exporting}>
               <Download className="size-4" /> {exporting ? 'Exporting…' : 'Export Excel'}
@@ -132,7 +137,7 @@ export function StudentsReport({ classFilter }: { classFilter: string }) {
         </div>
       </div>
 
-      {showImport && <ImportStudents />}
+      {iAmSuper && showImport && <ImportStudents />}
 
       {isAll ? (
         <p className="text-muted-foreground rounded-md border border-dashed p-8 text-center text-sm">
@@ -176,14 +181,16 @@ export function StudentsReport({ classFilter }: { classFilter: string }) {
                     <TableCell className="bg-background sticky left-0 font-medium whitespace-nowrap">
                       <span className="flex items-center gap-2">
                         {s.full_name}
-                        <button
-                          type="button"
-                          onClick={() => onDelete(s)}
-                          className="text-muted-foreground hover:text-destructive"
-                          aria-label={`Delete ${s.full_name}`}
-                        >
-                          <Trash2 className="size-3.5" />
-                        </button>
+                        {iAmSuper && (
+                          <button
+                            type="button"
+                            onClick={() => onDelete(s)}
+                            className="text-muted-foreground hover:text-destructive"
+                            aria-label={`Delete ${s.full_name}`}
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        )}
                       </span>
                     </TableCell>
                     <TableCell className="text-muted-foreground whitespace-nowrap">{s.email}</TableCell>

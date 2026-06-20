@@ -112,19 +112,21 @@ export function VolunteersReport({ classFilter }: { classFilter: string }) {
           className="max-w-xs"
         />
         <div className="flex items-center gap-2">
-          <Button
-            variant={showImport ? 'secondary' : 'outline'}
-            onClick={() => setShowImport((v) => !v)}
-          >
-            <Upload className="size-4" /> Import CSV
-          </Button>
+          {iAmSuper && (
+            <Button
+              variant={showImport ? 'secondary' : 'outline'}
+              onClick={() => setShowImport((v) => !v)}
+            >
+              <Upload className="size-4" /> Import CSV
+            </Button>
+          )}
           <Button variant="outline" onClick={() => void onExport()} disabled={exporting || rows.length === 0}>
             <Download className="size-4" /> {exporting ? 'Exporting…' : 'Export Excel'}
           </Button>
         </div>
       </div>
 
-      {showImport && <ImportVolunteers />}
+      {iAmSuper && showImport && <ImportVolunteers />}
 
       {rows.length === 0 ? (
         <p className="text-muted-foreground text-sm">No matching users.</p>
@@ -146,8 +148,7 @@ export function VolunteersReport({ classFilter }: { classFilter: string }) {
             <TableBody>
               {rows.map((v) => {
                 const isSelf = v.volunteer_id === user?.id
-                const canDelete =
-                  !isSelf && v.role !== 'super_admin' && (v.role === 'volunteer' || iAmSuper)
+                const canDelete = !isSelf && iAmSuper && v.role !== 'super_admin'
                 const canToggleRole = !isSelf && iAmSuper && v.role !== 'super_admin'
                 return (
                   <TableRow key={v.volunteer_id}>
@@ -226,9 +227,9 @@ export function VolunteersReport({ classFilter }: { classFilter: string }) {
       )}
 
       <p className="text-muted-foreground text-xs">
-        Sorted A–Z by name. Roles: <b>Super Admin</b> appoints/removes admins and can delete anyone;
-        <b> Admin</b> can delete volunteers only; <b>Volunteer</b> records attendance. Only a super admin
-        sees the promote/demote icons; you can&apos;t act on your own row or a super admin.
+        Sorted A–Z by name. Only a <b>super admin</b> can import, promote/demote, or delete users —
+        admins manage assignments, attendance &amp; reports; volunteers record attendance. You can&apos;t
+        act on your own row or a super admin.
       </p>
     </div>
   )
