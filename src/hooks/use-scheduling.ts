@@ -37,6 +37,24 @@ export function useIsSessionWeek(week: string) {
   })
 }
 
+/** 下一个真实上课日（>= 今天）。用于休息周时提示"何时复课"。 */
+export function useNextSession() {
+  return useQuery({
+    queryKey: ['next-session'],
+    queryFn: async () => {
+      const today = new Date().toLocaleDateString('en-CA')
+      const { data, error } = await supabase
+        .from('class_sessions')
+        .select('session_date')
+        .gte('session_date', today)
+        .order('session_date', { ascending: true })
+        .limit(1)
+      if (error) throw error
+      return (data?.[0]?.session_date as string | undefined) ?? null
+    },
+  })
+}
+
 export function useSetAvailability(volunteerId: string, week: string) {
   const qc = useQueryClient()
   return useMutation({

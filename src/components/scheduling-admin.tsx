@@ -3,6 +3,8 @@ import { toast } from 'sonner'
 import { nextWeekMonday } from '@/lib/date'
 import {
   useAppSettings,
+  useIsSessionWeek,
+  useNextSession,
   useRunSummarize,
   useRunWeeklyCheck,
   useUpdateAppSettings,
@@ -11,7 +13,6 @@ import {
 } from '@/hooks/use-scheduling'
 import type { AppSettings } from '@/types'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
@@ -19,8 +20,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 interface SavePatch {
   reminders_enabled: boolean
-  term_break_start: string | null
-  term_break_end: string | null
 }
 
 function SettingsForm({
@@ -33,8 +32,6 @@ function SettingsForm({
   saving: boolean
 }) {
   const [enabled, setEnabled] = useState(settings.reminders_enabled)
-  const [start, setStart] = useState(settings.term_break_start ?? '')
-  const [end, setEnd] = useState(settings.term_break_end ?? '')
 
   return (
     <div className="flex flex-col gap-4">
@@ -46,31 +43,14 @@ function SettingsForm({
         />
         <Label htmlFor="reminders">Weekly reminders enabled</Label>
       </div>
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="flex flex-col gap-1">
-          <Label htmlFor="bs">Term break start</Label>
-          <Input id="bs" type="date" value={start} onChange={(e) => setStart(e.target.value)} className="w-[170px]" />
-        </div>
-        <div className="flex flex-col gap-1">
-          <Label htmlFor="be">Term break end</Label>
-          <Input id="be" type="date" value={end} onChange={(e) => setEnd(e.target.value)} className="w-[170px]" />
-        </div>
-        <Button
-          size="sm"
-          disabled={saving}
-          onClick={() =>
-            onSave({
-              reminders_enabled: enabled,
-              term_break_start: start || null,
-              term_break_end: end || null,
-            })
-          }
-        >
+      <div>
+        <Button size="sm" disabled={saving} onClick={() => onSave({ reminders_enabled: enabled })}>
           {saving ? 'Saving…' : 'Save settings'}
         </Button>
       </div>
       <p className="text-muted-foreground text-xs">
-        Weekly reminders are skipped for weeks within the term break.
+        When on, reminders go out only on real class weeks — term breaks are skipped automatically from
+        the course calendar (no need to set break dates here).
       </p>
     </div>
   )
@@ -84,6 +64,9 @@ export function SchedulingAdmin() {
   const runSummarize = useRunSummarize()
   const availQ = useWeekAvailability(week)
   const coverQ = useWeekCoverage(week)
+  const { data: isSessionWeek } = useIsSessionWeek(week)
+  const { data: nextSession } = useNextSession()
+  const isBreak = isSessionWeek === false
 
   function saveSettings(p: SavePatch) {
     updateSettings.mutate(p, {
@@ -145,51 +128,74 @@ export function SchedulingAdmin() {
             Run coverage summary
           </Button>
           <p className="text-muted-foreground w-full text-xs">
-            Targets the week of {week}. Normally these run automatically (Sat/Sun) via pg_cron.
+            {isBreak
+              ? `Next week (${week}) is a term break — a run is skipped.`
+              : `Targets the week of ${week}.`}{' '}
+            Normally these run automatically (Sat/Sun) via pg_cron.
           </p>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Availability — week of {week}</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-4 text-sm">
-          <span className="text-green-600">Available: {available}</span>
-          <span className="text-destructive">Unavailable: {unavailable}</span>
-          <span className="text-muted-foreground">No response: {noResponse}</span>
-        </CardContent>
-      </Card>
+      {isBreak ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Next week</CardTitle>
+          </CardHeader>
+          <CardContent className="text-muted-foreground text-sm">
+            The week of {week} is a term break — no class, so no reminders are sent.
+            {nextSession && (
+              <>
+                {' '}
+                Reminders resume the week of{' '}
+                <span className="text-foreground font-medium">{nextSession}</span>.
+              </>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Availability — week of {week}</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-wrap gap-4 text-sm">
+              <span className="text-green-600">Available: {available}</span>
+              <span className="text-destructive">Unavailable: {unavailable}</span>
+              <span className="text-muted-foreground">No response: {noResponse}</span>
+            </CardContent>
+          </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Coverage requests — week of {week}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {coverage.length === 0 ? (
-            <p className="text-muted-foreground text-sm">No coverage requests.</p>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {coverage.map((c) => (
-                <div
-                  key={c.id}
-                  className="flex items-center justify-between gap-2 rounded-md border p-2 text-sm"
-                >
-                  <span>
-                    <span className="font-medium">{c.group_name}</span>
-                    <span className="text-muted-foreground"> · {c.class_name}</span>
-                  </span>
-                  {c.status === 'open' ? (
-                    <Badge variant="outline">Open</Badge>
-                  ) : (
-                    <Badge variant="secondary">Covered by {c.coverer ?? '—'}</Badge>
-                  )}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Coverage requests — week of {week}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {coverage.length === 0 ? (
+                <p className="text-muted-foreground text-sm">No coverage requests.</p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {coverage.map((c) => (
+                    <div
+                      key={c.id}
+                      className="flex items-center justify-between gap-2 rounded-md border p-2 text-sm"
+                    >
+                      <span>
+                        <span className="font-medium">{c.group_name}</span>
+                        <span className="text-muted-foreground"> · {c.class_name}</span>
+                      </span>
+                      {c.status === 'open' ? (
+                        <Badge variant="outline">Open</Badge>
+                      ) : (
+                        <Badge variant="secondary">Covered by {c.coverer ?? '—'}</Badge>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
     </div>
   )
 }
