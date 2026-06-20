@@ -1,7 +1,8 @@
 -- pg_cron 定时任务（在 Supabase SQL Editor 运行一次；时间为 UTC）
 -- 依赖 20260620110000_per_curriculum_reminders 里的 run_*(boolean, text) 函数。
 -- 按课程分天发，摊开每周邮件量（UTC+8 晚 8:00 = UTC 12:00）：
---   周四 MMin 6 可用性 · 周五 MMin 7 可用性 · 周六 MMin 6 补位 · 周日 MMin 7 补位
+--   周四 MMin 6 可用性 · 周五 MMin 7 可用性
+--   周六/周日 补位：覆盖全部课程缺口，周六发给 MMin 6 志愿者、周日发给 MMin 7 志愿者（任何人可认领）
 
 create extension if not exists pg_cron;
 
@@ -23,10 +24,10 @@ select cron.schedule('availability-mmin6', '0 12 * * 4',  -- 周四 20:00 UTC+8
 select cron.schedule('availability-mmin7', '0 12 * * 5',  -- 周五 20:00 UTC+8
   $$ select public.run_weekly_availability_check(true, 'MMin 7'); $$);
 
--- 补位汇总 + 征集（true = 同时发邮件）
-select cron.schedule('coverage-mmin6', '0 12 * * 6',      -- 周六 20:00 UTC+8
+-- 补位征集（覆盖全部课程缺口；p_curriculum 仅决定收件人那一批；true = 同时发邮件）
+select cron.schedule('coverage-mmin6', '0 12 * * 6',      -- 周六 20:00 UTC+8 → 发 MMin 6 志愿者
   $$ select public.run_summarize_coverage(true, 'MMin 6'); $$);
-select cron.schedule('coverage-mmin7', '0 12 * * 0',      -- 周日 20:00 UTC+8
+select cron.schedule('coverage-mmin7', '0 12 * * 0',      -- 周日 20:00 UTC+8 → 发 MMin 7 志愿者
   $$ select public.run_summarize_coverage(true, 'MMin 7'); $$);
 
 -- 查看：select jobname, schedule, active from cron.job order by jobname;
