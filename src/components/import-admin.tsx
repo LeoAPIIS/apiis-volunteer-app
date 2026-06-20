@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
-import { dropHeader, parseCsv } from '@/lib/csv'
+import { mapCsvColumns, parseCsv } from '@/lib/csv'
 import { useAllGroups, useClasses } from '@/hooks/use-groups'
 import type { GroupWithCohort } from '@/hooks/use-groups'
 import { Button } from '@/components/ui/button'
@@ -86,7 +86,7 @@ export function ImportStudents() {
   const groups = groupsQ.data ?? []
 
   async function run() {
-    const rows = dropHeader(parseCsv(csv))
+    const { body: rows, get } = mapCsvColumns(parseCsv(csv), { name: 0, class: 1, group: 2, email: 3 })
     if (rows.length === 0) {
       toast.error('Nothing to import')
       return
@@ -96,10 +96,10 @@ export function ImportStudents() {
     const byEmail = new Map<string, { group_id: string; full_name: string; email: string }>()
     const errors: string[] = []
     for (const row of rows) {
-      const name = row[0] ?? ''
-      const classCell = row[1] ?? ''
-      const groupCell = row[2] ?? ''
-      const email = (row[3] ?? '').toLowerCase().trim()
+      const name = get(row, 'name')
+      const classCell = get(row, 'class')
+      const groupCell = get(row, 'group')
+      const email = get(row, 'email').toLowerCase().trim()
       if (!name) {
         errors.push('(missing name) — row skipped')
         continue
@@ -140,10 +140,10 @@ export function ImportStudents() {
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         <p className="text-muted-foreground text-sm">
-          One row per student: <code>Name, Class, Group, Email</code>. <b>Email is required</b> and is
-          the unique key — re-importing the same email updates that student. Class can be the full
-          name or a unique part (e.g. <code>6P</code>); Group can be <code>Group 5</code> or{' '}
-          <code>5</code>.
+          One row per student: <code>Name, Class, Group, Email</code> (keep a header row — columns are
+          matched by name, so order doesn&apos;t matter). <b>Email is required</b> and is the unique
+          key — re-importing the same email updates that student. Class can be the full name or a
+          unique part (e.g. <code>6P</code>); Group can be <code>Group 5</code> or <code>5</code>.
         </p>
         {classes.length > 0 && (
           <p className="text-muted-foreground text-xs">
@@ -156,7 +156,7 @@ export function ImportStudents() {
         </div>
         <Textarea
           rows={7}
-          placeholder={'Alice Wong, MMin 6P Monday Morning, Group 1, alice@example.com\nBob Lee, 6L, 12, bob@example.com'}
+          placeholder={'Name, Class, Group, Email\nAlice Wong, MMin 6P Monday Morning, 1, alice@example.com\nBob Lee, 6L, 12, bob@example.com'}
           value={csv}
           onChange={(e) => setCsv(e.target.value)}
           className="font-mono text-xs"
@@ -186,7 +186,7 @@ export function ImportVolunteers() {
   const groups = groupsQ.data ?? []
 
   async function run() {
-    const rows = dropHeader(parseCsv(csv))
+    const { body: rows, get } = mapCsvColumns(parseCsv(csv), { name: 0, email: 1, class: 2, group: 3 })
     if (rows.length === 0) {
       toast.error('Nothing to import')
       return
@@ -201,11 +201,10 @@ export function ImportVolunteers() {
     let ok = 0
     const errors: string[] = []
     for (let i = 0; i < rows.length; i++) {
-      const name = rows[i][0] ?? ''
-      const email = (rows[i][1] ?? '').trim()
-      const phone = rows[i][2] ?? ''
-      const classCell = rows[i][3] ?? ''
-      const groupCell = rows[i][4] ?? ''
+      const name = get(rows[i], 'name')
+      const email = get(rows[i], 'email').trim()
+      const classCell = get(rows[i], 'class')
+      const groupCell = get(rows[i], 'group')
       if (!email) {
         errors.push(`${name || '(no name)'}: missing email — skipped`)
       } else {
@@ -219,7 +218,7 @@ export function ImportVolunteers() {
         const { error } = await supabase.rpc('admin_import_volunteer', {
           p_email: email,
           p_full_name: name,
-          p_phone: phone || null,
+          p_phone: null,
           p_password: password,
           p_group_id: groupId,
         })
@@ -245,8 +244,8 @@ export function ImportVolunteers() {
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         <p className="text-muted-foreground text-sm">
-          One row per volunteer: <code>Name, Email, Phone, Class, Group</code> (Phone/Class/Group
-          optional). If Class + Group are given, the volunteer is assigned to that group. New
+          One row per volunteer: <code>Name, Email, Class, Group</code> (keep a header row — columns are
+          matched by name). If Class + Group are given, the volunteer is assigned to that group. New
           accounts get the temporary password below; re-importing an existing email just updates them.
         </p>
         <div className="flex flex-col gap-1">
@@ -265,7 +264,7 @@ export function ImportVolunteers() {
         </div>
         <Textarea
           rows={7}
-          placeholder={'Alice Wong, alice@example.com, +12025550111, MMin 6P Monday Morning, Group 1\nBob Lee, bob@example.com, , 6L, 12'}
+          placeholder={'Name, Email, Class, Group\nAlice Wong, alice@example.com, MMin 6P Monday Morning, 1\nBob Lee, bob@example.com, MMin 6L Tuesday Night, 12'}
           value={csv}
           onChange={(e) => setCsv(e.target.value)}
           className="font-mono text-xs"
