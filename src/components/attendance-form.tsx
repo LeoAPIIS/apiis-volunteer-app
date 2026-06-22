@@ -37,28 +37,28 @@ interface Props {
 
 const RUBRIC: {
   score: number
-  emoji: string
+  dot: string
   title: string
   looksLike: string
   contribution: string
 }[] = [
   {
     score: 0,
-    emoji: '⚪',
+    dot: 'bg-muted-foreground',
     title: 'No Participation',
     looksLike: 'Camera is off, absent, or completely silent, or missed one session.',
     contribution: 'None.',
   },
   {
     score: 1,
-    emoji: '🟢',
+    dot: 'bg-chart-4',
     title: 'Minimal Participation',
     looksLike: 'Camera is on, but mostly just watching.',
     contribution: 'Repeating what others said, off-topic comments, or showing a lack of understanding.',
   },
   {
     score: 2,
-    emoji: '🔵',
+    dot: 'bg-brand',
     title: 'Satisfactory Participation',
     looksLike: 'Camera is on, present, and prepared.',
     contribution:
@@ -66,7 +66,7 @@ const RUBRIC: {
   },
   {
     score: 3,
-    emoji: '🔵',
+    dot: 'bg-brand-green',
     title: 'Excellent Participation',
     looksLike: 'Camera is on and highly engaged the whole time.',
     contribution:
@@ -115,8 +115,9 @@ export function AttendanceForm({ students, existing, groupId, sessionDate, volun
         <ul className="flex flex-col gap-2.5">
           {RUBRIC.map((r) => (
             <li key={r.score}>
-              <p className="text-foreground font-medium">
-                {r.emoji} {r.score} – {r.title}
+              <p className="text-foreground flex items-center gap-2 font-medium">
+                <span className={`inline-block size-2.5 shrink-0 rounded-full ${r.dot}`} />
+                {r.score} – {r.title}
               </p>
               <p className="text-muted-foreground">
                 <span className="text-foreground/80 font-medium">What it looks like:</span>{' '}
