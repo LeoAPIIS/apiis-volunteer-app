@@ -31,12 +31,18 @@ export function useAssignVolunteer() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (vars: { groupId: string; volunteerId: string }) => {
-      const { error } = await supabase
-        .from('assignments')
-        .insert({ group_id: vars.groupId, volunteer_id: vars.volunteerId, source: 'manual' })
+      // RPC：建立 manual 分配 + 同步关闭该组未认领的补位请求(覆盖人=被指派者)
+      const { error } = await supabase.rpc('admin_assign_volunteer', {
+        p_group_id: vars.groupId,
+        p_volunteer_id: vars.volunteerId,
+      })
       if (error) throw error
     },
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ['assignments'] }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['assignments'] })
+      void qc.invalidateQueries({ queryKey: ['coverage-week'] })
+      void qc.invalidateQueries({ queryKey: ['coverage-open'] })
+    },
   })
 }
 
