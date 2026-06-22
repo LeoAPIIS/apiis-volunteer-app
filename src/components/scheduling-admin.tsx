@@ -167,7 +167,7 @@ export function SchedulingAdmin() {
             {isBreak
               ? `Next week (${week}) is a term break — a run is skipped.`
               : `Targets the week of ${week}.`}{' '}
-            Normally these run automatically (Sat/Sun) via pg_cron.
+            Normally these run automatically via pg_cron — availability Thu/Fri, coverage Sat/Sun (by curriculum).
           </p>
         </CardContent>
       </Card>
