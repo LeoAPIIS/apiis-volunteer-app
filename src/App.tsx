@@ -10,6 +10,7 @@ import { AdminPage } from '@/pages/AdminPage'
 import { GroupAttendancePage } from '@/pages/GroupAttendancePage'
 import { NotificationsPage } from '@/pages/NotificationsPage'
 import { AccountPage } from '@/pages/AccountPage'
+import { FeedbackPage } from '@/pages/FeedbackPage'
 
 /** 已登录时，根据角色跳到对应首页。 */
 function HomeRedirect() {
@@ -44,6 +45,7 @@ function App() {
           <Route path="/groups/:groupId" element={<GroupAttendancePage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/account" element={<AccountPage />} />
+          <Route path="/feedback" element={<FeedbackPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

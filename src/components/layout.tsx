@@ -1,5 +1,5 @@
 import { Link, Outlet } from 'react-router-dom'
-import { Bell } from 'lucide-react'
+import { Bell, MessageSquare } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
 import { useUnreadCount } from '@/hooks/use-scheduling'
 import { ApiisLogo } from '@/components/apiis-logo'
@@ -36,6 +36,12 @@ export function Layout() {
             <span className="text-muted-foreground hidden text-sm font-medium sm:inline">Volunteers</span>
           </Link>
           <div className="flex items-center gap-1">
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/feedback" aria-label="Send feedback">
+                <MessageSquare className="size-4" />
+                <span className="hidden sm:inline">Feedback</span>
+              </Link>
+            </Button>
             <Button variant="ghost" size="icon" asChild className="relative">
               <Link to="/notifications" aria-label="Notifications">
                 <Bell className="size-5" />

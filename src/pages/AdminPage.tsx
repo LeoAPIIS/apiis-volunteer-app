@@ -7,6 +7,7 @@ import { StudentsReport } from '@/components/students-report'
 import { SchedulingAdmin } from '@/components/scheduling-admin'
 import { VolunteersReport } from '@/components/volunteers-report'
 import { Spinner } from '@/components/spinner'
+import { useFeedback } from '@/hooks/use-feedback'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -76,6 +77,28 @@ function RecordsTab({ classFilter }: { classFilter: string }) {
   )
 }
 
+function FeedbackTab() {
+  const { data: items, isLoading } = useFeedback()
+  if (isLoading) return <Spinner />
+  if (!items || items.length === 0)
+    return <p className="text-muted-foreground text-sm">No feedback yet.</p>
+  return (
+    <div className="flex flex-col gap-2">
+      {items.map((f) => (
+        <div key={f.id} className="rounded-md border p-3">
+          <div className="flex items-center justify-between gap-2">
+            <p className="font-medium">{f.full_name || 'Unknown'}</p>
+            <span className="text-muted-foreground text-xs">
+              {new Date(f.created_at).toLocaleString()}
+            </span>
+          </div>
+          <p className="text-muted-foreground mt-1 text-sm whitespace-pre-wrap">{f.message}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export function AdminPage() {
   const [classFilter, setClassFilter] = useState('all')
   const classesQ = useClasses()
@@ -107,6 +130,7 @@ export function AdminPage() {
           <TabsTrigger value="students">Students</TabsTrigger>
           <TabsTrigger value="volunteers">Volunteers</TabsTrigger>
           <TabsTrigger value="scheduling">Scheduling</TabsTrigger>
+          <TabsTrigger value="feedback">Feedback</TabsTrigger>
         </TabsList>
         <TabsContent value="assignments" className="mt-4">
           <AssignmentsTab classFilter={classFilter} />
@@ -122,6 +146,9 @@ export function AdminPage() {
         </TabsContent>
         <TabsContent value="scheduling" className="mt-4">
           <SchedulingAdmin />
+        </TabsContent>
+        <TabsContent value="feedback" className="mt-4">
+          <FeedbackTab />
         </TabsContent>
       </Tabs>
     </div>
