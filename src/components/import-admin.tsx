@@ -197,59 +197,80 @@ export function ImportVolunteers() {
     }
     setBusy(true)
     setResult(null)
-    setProgress({ done: 0, total: rows.length })
-    let ok = 0
+
+    // 先按 email 聚合:累计该志愿者在文件里出现的所有组(去重、保持顺序)。
+    // 一行多组("17,18")或同一志愿者多行,都会被合并成一份完整名单。
+    const byEmail = new Map<string, { name: string; groupIds: string[] }>()
     const errors: string[] = []
-    for (let i = 0; i < rows.length; i++) {
-      const name = get(rows[i], 'name')
-      const email = get(rows[i], 'email').trim()
-      const classCell = get(rows[i], 'class')
-      const groupCell = get(rows[i], 'group')
+    for (const row of rows) {
+      const name = get(row, 'name')
+      const email = get(row, 'email').trim().toLowerCase()
+      const classCell = get(row, 'class')
+      const groupCell = get(row, 'group')
       if (!email) {
         errors.push(`${name || '(no name)'}: missing email — skipped`)
-      } else {
-        // 支持一个志愿者多组：Group 写成 "17,18" / "17;18" / "17, 18" 等
-        const groupIds: string[] = []
-        if (classCell && groupCell) {
-          for (const tok of groupCell
-            .split(/[,;/]+/)
-            .map((t) => t.trim())
-            .filter(Boolean)) {
-            const gid = resolveGroupId(classes, groups, classCell, tok)
-            if (gid) groupIds.push(gid)
-            else errors.push(`${name || email}: class/group "${classCell} / ${tok}" not found`)
-          }
-        }
-        const { data: uid, error } = await supabase.rpc('admin_import_volunteer', {
-          p_email: email,
-          p_full_name: name,
-          p_phone: null,
-          p_password: password,
-          p_group_id: groupIds[0] ?? null,
-        })
-        if (error) {
-          errors.push(`${email}: ${error.message}`)
-        } else {
-          ok++
-          // 其余小组逐个追加分配（账号已由 RPC 建好/找到）
-          if (uid && groupIds.length > 1) {
-            const extra = groupIds.slice(1).map((gid) => ({
-              group_id: gid,
-              volunteer_id: uid as string,
-            }))
-            const { error: aErr } = await supabase
-              .from('assignments')
-              .upsert(extra, { onConflict: 'group_id,volunteer_id' })
-            if (aErr) errors.push(`${email}: extra groups — ${aErr.message}`)
-          }
+        continue
+      }
+      const entry = byEmail.get(email) ?? { name, groupIds: [] }
+      if (name && !entry.name) entry.name = name
+      if (classCell && groupCell) {
+        for (const tok of groupCell
+          .split(/[,;/]+/)
+          .map((t) => t.trim())
+          .filter(Boolean)) {
+          const gid = resolveGroupId(classes, groups, classCell, tok)
+          if (!gid) errors.push(`${name || email}: class/group "${classCell} / ${tok}" not found`)
+          else if (!entry.groupIds.includes(gid)) entry.groupIds.push(gid)
         }
       }
-      setProgress({ done: i + 1, total: rows.length })
+      byEmail.set(email, entry)
+    }
+
+    const entries = [...byEmail.entries()]
+    setProgress({ done: 0, total: entries.length })
+    let ok = 0
+    for (let i = 0; i < entries.length; i++) {
+      const [email, { name, groupIds }] = entries[i]
+      const { data: uid, error } = await supabase.rpc('admin_import_volunteer', {
+        p_email: email,
+        p_full_name: name,
+        p_phone: null,
+        p_password: password,
+        p_group_id: groupIds[0] ?? null,
+      })
+      if (error) {
+        errors.push(`${email}: ${error.message}`)
+      } else {
+        ok++
+        // 其余小组逐个追加分配（账号已由 RPC 建好/找到）
+        if (uid && groupIds.length > 1) {
+          const extra = groupIds.slice(1).map((gid) => ({
+            group_id: gid,
+            volunteer_id: uid as string,
+          }))
+          const { error: aErr } = await supabase
+            .from('assignments')
+            .upsert(extra, { onConflict: 'group_id,volunteer_id' })
+          if (aErr) errors.push(`${email}: extra groups — ${aErr.message}`)
+        }
+        // 幂等:删掉该志愿者「不在本次名单内」的旧永久分配(coverage_week 为 null)。
+        // 于是再次导入 = 用文件里的组覆盖旧组,小组上不会累积多人;补位(coverage)分配不受影响。
+        if (uid && groupIds.length > 0) {
+          const { error: dErr } = await supabase
+            .from('assignments')
+            .delete()
+            .eq('volunteer_id', uid as string)
+            .is('coverage_week', null)
+            .not('group_id', 'in', `(${groupIds.join(',')})`)
+          if (dErr) errors.push(`${email}: cleanup old groups — ${dErr.message}`)
+        }
+      }
+      setProgress({ done: i + 1, total: entries.length })
     }
     setBusy(false)
     setResult({ ok, errors })
     if (ok > 0) {
-      void qc.invalidateQueries({ queryKey: ['volunteers'] })
+      void qc.invalidateQueries({ queryKey: ['all-users'] })
       void qc.invalidateQueries({ queryKey: ['volunteer-activity'] })
       void qc.invalidateQueries({ queryKey: ['assignments'] })
       toast.success(`Imported / updated ${ok} volunteer(s)`)
@@ -266,7 +287,9 @@ export function ImportVolunteers() {
           One row per volunteer: <code>Name, Email, Class, Group</code> (keep a header row — columns are
           matched by name). A volunteer can have <b>several groups</b> in one cell — write{' '}
           <code>&quot;17,18&quot;</code> (quoted) or <code>17;18</code>. New accounts get the temporary
-          password below; re-importing an existing email just updates them.
+          password below. <b>Re-importing replaces that volunteer&apos;s groups</b> with exactly
+          what&apos;s in the file, so updating the roster won&apos;t pile up duplicates (no manual
+          clearing needed).
         </p>
         <div className="flex flex-col gap-1">
           <Label htmlFor="temp-pw">Temporary password (for new accounts)</Label>

@@ -1967,8 +1967,9 @@ begin
   if not public.is_super_admin() then
     raise exception 'Super admin only';
   end if;
-  delete from public.assignments;
-  get diagnostics n = row_count;
+  -- 用 TRUNCATE 清空:启用了 safeupdate 的库会拒绝不带 WHERE 的 DELETE;TRUNCATE 不受其约束
+  select count(*) into n from public.assignments;
+  truncate table public.assignments;
   return n;
 end;
 $$;
