@@ -36,7 +36,7 @@ interface Props {
 }
 
 const RUBRIC: { score: number; text: string }[] = [
-  { score: 0, text: 'No video on, or did not participate in the discussion.' },
+  { score: 0, text: 'No video on, did not participate in the discussion, or missed the session.' },
   {
     score: 1,
     text: 'Video on, but the discussion was not meaningful — repeating others, or not understanding the question.',
