@@ -69,19 +69,32 @@ export function GroupAssignmentCard({ group, users, assignments }: Props) {
           {groupAssignments.length === 0 ? (
             <span className="text-muted-foreground text-sm">No volunteers assigned</span>
           ) : (
-            groupAssignments.map((a) => (
-              <Badge key={a.id} variant="secondary" className="gap-1 pr-1">
-                {nameOf(a.volunteer_id)}
-                <button
-                  type="button"
-                  onClick={() => void onRemove(a)}
-                  className="hover:text-destructive rounded-sm"
-                  aria-label={`Remove ${nameOf(a.volunteer_id)}`}
+            groupAssignments.map((a) => {
+              // coverage_week 非空 = 临时补位的人 → 浅绿底；为空 = 本来的负责人 → 保持原样
+              const isCoverage = a.coverage_week != null
+              return (
+                <Badge
+                  key={a.id}
+                  variant="secondary"
+                  className={`gap-1 pr-1${
+                    isCoverage
+                      ? ' bg-green-100 text-green-900 dark:bg-green-900/40 dark:text-green-100'
+                      : ''
+                  }`}
+                  title={isCoverage ? `Covering (week of ${a.coverage_week})` : undefined}
                 >
-                  <X className="size-3" />
-                </button>
-              </Badge>
-            ))
+                  {nameOf(a.volunteer_id)}
+                  <button
+                    type="button"
+                    onClick={() => void onRemove(a)}
+                    className="hover:text-destructive rounded-sm"
+                    aria-label={`Remove ${nameOf(a.volunteer_id)}`}
+                  >
+                    <X className="size-3" />
+                  </button>
+                </Badge>
+              )
+            })
           )}
         </div>
         {available.length > 0 ? (
