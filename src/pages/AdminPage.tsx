@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAllGroups, useClasses } from '@/hooks/use-groups'
-import { useAssignments, useVolunteers } from '@/hooks/use-assignments'
+import { useAssignments, useAllUsers } from '@/hooks/use-assignments'
 import { GroupAssignmentCard } from '@/components/group-assignment-card'
 import { StudentsReport } from '@/components/students-report'
 import { SchedulingAdmin } from '@/components/scheduling-admin'
@@ -21,13 +21,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 function AssignmentsTab({ classFilter }: { classFilter: string }) {
   const groupsQ = useAllGroups()
-  const volunteersQ = useVolunteers()
+  const usersQ = useAllUsers()
   const assignmentsQ = useAssignments()
 
-  if (groupsQ.isLoading || volunteersQ.isLoading || assignmentsQ.isLoading) {
+  if (groupsQ.isLoading || usersQ.isLoading || assignmentsQ.isLoading) {
     return <Spinner label="Loading groups & assignments…" />
   }
-  const volunteers = volunteersQ.data ?? []
+  const users = usersQ.data ?? []
   const assignments = assignmentsQ.data ?? []
   const groups = (groupsQ.data ?? []).filter(
     (g) => classFilter === 'all' || g.cohort_id === classFilter,
@@ -40,12 +40,7 @@ function AssignmentsTab({ classFilter }: { classFilter: string }) {
   return (
     <div className="grid gap-4 md:grid-cols-2">
       {groups.map((g) => (
-        <GroupAssignmentCard
-          key={g.id}
-          group={g}
-          volunteers={volunteers}
-          assignments={assignments}
-        />
+        <GroupAssignmentCard key={g.id} group={g} users={users} assignments={assignments} />
       ))}
     </div>
   )

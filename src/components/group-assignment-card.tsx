@@ -17,19 +17,20 @@ import {
 
 interface Props {
   group: GroupWithCohort
-  volunteers: Profile[]
+  users: Profile[]
   assignments: Assignment[]
 }
 
-export function GroupAssignmentCard({ group, volunteers, assignments }: Props) {
+export function GroupAssignmentCard({ group, users, assignments }: Props) {
   const assign = useAssignVolunteer()
   const unassign = useUnassign()
   const [selected, setSelected] = useState('')
 
   const groupAssignments = assignments.filter((a) => a.group_id === group.id)
   const assignedIds = new Set(groupAssignments.map((a) => a.volunteer_id))
-  const available = volunteers.filter((v) => !assignedIds.has(v.id))
-  const nameOf = (id: string) => volunteers.find((v) => v.id === id)?.full_name ?? 'Unknown'
+  // 可分配名单：排除 super_admin(itsupport);名字从「全部用户」解析,故升级为 admin 后仍正确显示
+  const available = users.filter((u) => u.role !== 'super_admin' && !assignedIds.has(u.id))
+  const nameOf = (id: string) => users.find((u) => u.id === id)?.full_name ?? 'Unknown'
 
   async function onAssign() {
     if (!selected) return
@@ -87,7 +88,7 @@ export function GroupAssignmentCard({ group, volunteers, assignments }: Props) {
           <div className="flex items-center gap-2">
             <Select value={selected} onValueChange={setSelected}>
               <SelectTrigger className="w-[220px]">
-                <SelectValue placeholder="Choose a volunteer" />
+                <SelectValue placeholder="Choose someone" />
               </SelectTrigger>
               <SelectContent>
                 {available.map((v) => (

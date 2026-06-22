@@ -2,16 +2,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import type { Assignment, Profile } from '@/types'
 
-/** 所有志愿者（管理员用）。 */
-export function useVolunteers() {
+/** 所有用户（管理员用，含 volunteer/admin/super_admin）。用于分配名单与名字解析——
+ *  这样志愿者被提升为 admin 后,其已有分配仍能正确显示名字(不再 Unknown)。 */
+export function useAllUsers() {
   return useQuery({
-    queryKey: ['volunteers'],
+    queryKey: ['all-users'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('role', 'volunteer')
-        .order('full_name')
+      const { data, error } = await supabase.from('profiles').select('*').order('full_name')
       if (error) throw error
       return (data ?? []) as Profile[]
     },
@@ -75,7 +72,7 @@ export function useSetUserRole() {
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['volunteer-activity'] })
-      void qc.invalidateQueries({ queryKey: ['volunteers'] })
+      void qc.invalidateQueries({ queryKey: ['all-users'] })
       void qc.invalidateQueries({ queryKey: ['assignments'] })
     },
   })
@@ -91,7 +88,7 @@ export function useDeleteVolunteer() {
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['volunteer-activity'] })
-      void qc.invalidateQueries({ queryKey: ['volunteers'] })
+      void qc.invalidateQueries({ queryKey: ['all-users'] })
       void qc.invalidateQueries({ queryKey: ['assignments'] })
     },
   })
