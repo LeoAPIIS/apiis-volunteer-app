@@ -141,12 +141,18 @@ export function SchedulingAdmin() {
             variant="outline"
             size="sm"
             disabled={runWeekly.isPending}
-            onClick={() =>
+            onClick={() => {
+              if (
+                !window.confirm(
+                  'Run the weekly availability check now? It notifies ALL volunteers in-app (no email is sent).',
+                )
+              )
+                return
               runWeekly.mutate(undefined, {
                 onSuccess: (n) => toast.success(`Weekly check done — ${n} volunteer(s) notified`),
                 onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
               })
-            }
+            }}
           >
             Run weekly availability check
           </Button>
@@ -154,12 +160,18 @@ export function SchedulingAdmin() {
             variant="outline"
             size="sm"
             disabled={runSummarize.isPending}
-            onClick={() =>
+            onClick={() => {
+              if (
+                !window.confirm(
+                  'Run the coverage summary now? It creates coverage requests and notifies volunteers in-app (no email is sent).',
+                )
+              )
+                return
               runSummarize.mutate(undefined, {
                 onSuccess: (n) => toast.success(`Summary done — ${n} open coverage request(s)`),
                 onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
               })
-            }
+            }}
           >
             Run coverage summary
           </Button>
