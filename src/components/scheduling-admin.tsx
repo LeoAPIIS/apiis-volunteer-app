@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { TriangleAlert } from 'lucide-react'
+import { RefreshCw, TriangleAlert } from 'lucide-react'
 import { toast } from 'sonner'
 import { nextWeekMonday } from '@/lib/date'
 import {
@@ -87,6 +87,22 @@ export function SchedulingAdmin() {
 
   return (
     <div className="flex flex-col gap-6">
+      <div className="flex justify-end">
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={availQ.isFetching || coverQ.isFetching}
+          onClick={() => {
+            void availQ.refetch()
+            void coverQ.refetch()
+          }}
+        >
+          <RefreshCw
+            className={`size-4 ${availQ.isFetching || coverQ.isFetching ? 'animate-spin' : ''}`}
+          />
+          Refresh
+        </Button>
+      </div>
       {needsAttention && (
         <Card className="border-amber-400/60 bg-amber-50 dark:bg-amber-950/20">
           <CardHeader>
