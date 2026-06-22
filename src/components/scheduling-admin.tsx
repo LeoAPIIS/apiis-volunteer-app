@@ -51,7 +51,7 @@ function SettingsForm({
       </div>
       <p className="text-muted-foreground text-xs">
         When on, reminders go out only on real class weeks — term breaks are skipped automatically from
-        the course calendar (no need to set break dates here).
+        the course calendar.
       </p>
     </div>
   )
