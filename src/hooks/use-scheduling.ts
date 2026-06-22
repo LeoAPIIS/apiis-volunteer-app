@@ -247,7 +247,11 @@ export function useRunWeeklyCheck() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.rpc('run_weekly_availability_check')
+      // 手动触发:显式 p_send_email=false → 仅站内,绝不发邮件;p_curriculum=null → 全部志愿者
+      const { data, error } = await supabase.rpc('run_weekly_availability_check', {
+        p_send_email: false,
+        p_curriculum: null,
+      })
       if (error) throw error
       return data as number
     },
@@ -263,7 +267,11 @@ export function useRunSummarize() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.rpc('run_summarize_coverage')
+      // 手动触发:显式 p_send_email=false → 仅站内,绝不发邮件;p_curriculum=null → 全部志愿者
+      const { data, error } = await supabase.rpc('run_summarize_coverage', {
+        p_send_email: false,
+        p_curriculum: null,
+      })
       if (error) throw error
       return data as number
     },
