@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 
 export interface Feedback {
@@ -7,6 +7,8 @@ export interface Feedback {
   full_name: string | null
   message: string
   created_at: string
+  resolved: boolean
+  resolved_at: string | null
 }
 
 /** 提交反馈（任何登录用户）。 */
@@ -35,5 +37,23 @@ export function useFeedback() {
       if (error) throw error
       return (data ?? []) as Feedback[]
     },
+  })
+}
+
+/** 标记反馈为已解决 / 重新打开（仅管理员，RLS 限制）。 */
+export function useSetFeedbackResolved() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (vars: { id: string; resolved: boolean }) => {
+      const { error } = await supabase
+        .from('feedback')
+        .update({
+          resolved: vars.resolved,
+          resolved_at: vars.resolved ? new Date().toISOString() : null,
+        })
+        .eq('id', vars.id)
+      if (error) throw error
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['feedback'] }),
   })
 }
