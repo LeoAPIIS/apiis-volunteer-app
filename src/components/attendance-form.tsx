@@ -35,19 +35,42 @@ interface Props {
   volunteerId: string
 }
 
-const RUBRIC: { score: number; text: string }[] = [
-  { score: 0, text: 'No video on, did not participate in the discussion, or missed the session.' },
+const RUBRIC: {
+  score: number
+  emoji: string
+  title: string
+  looksLike: string
+  contribution: string
+}[] = [
+  {
+    score: 0,
+    emoji: '⚪',
+    title: 'No Participation',
+    looksLike: 'Camera is off, absent, or completely silent, or missed one session.',
+    contribution: 'None.',
+  },
   {
     score: 1,
-    text: 'Video on, but the discussion was not meaningful — repeating others, or not understanding the question.',
+    emoji: '🟢',
+    title: 'Minimal Participation',
+    looksLike: 'Camera is on, but mostly just watching.',
+    contribution: 'Repeating what others said, off-topic comments, or showing a lack of understanding.',
   },
   {
     score: 2,
-    text: 'Video on and prepared, but only reading copied answers with no personal insight.',
+    emoji: '🔵',
+    title: 'Satisfactory Participation',
+    looksLike: 'Camera is on, present, and prepared.',
+    contribution:
+      'Answers the question correctly, but relies heavily on notes or readings without much personal thought.',
   },
   {
     score: 3,
-    text: 'Video on, prepared, actively participating, with own insights and real-life examples.',
+    emoji: '🔵',
+    title: 'Excellent Participation',
+    looksLike: 'Camera is on and highly engaged the whole time.',
+    contribution:
+      'Shares original ideas, connects the topic to real life or ministry, and helps move the group conversation forward.',
   },
 ]
 
@@ -88,11 +111,21 @@ export function AttendanceForm({ students, existing, groupId, sessionDate, volun
   return (
     <div className="flex flex-col gap-4">
       <div className="bg-muted/40 rounded-md border p-3 text-sm">
-        <p className="mb-1 font-medium">Contribution scoring guide</p>
-        <ul className="text-muted-foreground space-y-0.5">
+        <p className="mb-2 font-medium">Contribution scoring guide</p>
+        <ul className="flex flex-col gap-2.5">
           {RUBRIC.map((r) => (
             <li key={r.score}>
-              <span className="text-foreground font-medium">{r.score}</span> — {r.text}
+              <p className="text-foreground font-medium">
+                {r.emoji} {r.score} – {r.title}
+              </p>
+              <p className="text-muted-foreground">
+                <span className="text-foreground/80 font-medium">What it looks like:</span>{' '}
+                {r.looksLike}
+              </p>
+              <p className="text-muted-foreground">
+                <span className="text-foreground/80 font-medium">Contribution:</span>{' '}
+                {r.contribution}
+              </p>
             </li>
           ))}
         </ul>
