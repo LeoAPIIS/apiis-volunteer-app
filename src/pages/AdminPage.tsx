@@ -41,10 +41,23 @@ function AssignmentsTab({ classFilter }: { classFilter: string }) {
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      {groups.map((g) => (
-        <GroupAssignmentCard key={g.id} group={g} users={users} assignments={assignments} />
-      ))}
+    <div className="flex flex-col gap-3">
+      <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+        <span className="flex items-center gap-1.5">
+          <span className="bg-secondary inline-block size-3 rounded-full" /> Roster (original)
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block size-3 rounded-full bg-blue-700" /> Admin-assigned
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block size-3 rounded-full border bg-green-100" /> Coverage
+        </span>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        {groups.map((g) => (
+          <GroupAssignmentCard key={g.id} group={g} users={users} assignments={assignments} />
+        ))}
+      </div>
     </div>
   )
 }

@@ -70,18 +70,27 @@ export function GroupAssignmentCard({ group, users, assignments }: Props) {
             <span className="text-muted-foreground text-sm">No volunteers assigned</span>
           ) : (
             groupAssignments.map((a) => {
-              // coverage_week 非空 = 临时补位的人 → 浅绿底；为空 = 本来的负责人 → 保持原样
+              // 三种来源:补位(coverage_week 非空)→ 浅绿;管理员手动指派(source=manual)→ 深蓝;
+              // 导入名单/本来的负责人 → 保持原样(灰)。补位颜色优先级最高。
               const isCoverage = a.coverage_week != null
+              const isManual = !isCoverage && a.source === 'manual'
+              const tint = isCoverage
+                ? ' bg-green-100 text-green-900 dark:bg-green-900/40 dark:text-green-100'
+                : isManual
+                  ? ' bg-blue-700 text-white dark:bg-blue-700'
+                  : ''
               return (
                 <Badge
                   key={a.id}
                   variant="secondary"
-                  className={`gap-1 pr-1${
+                  className={`gap-1 pr-1${tint}`}
+                  title={
                     isCoverage
-                      ? ' bg-green-100 text-green-900 dark:bg-green-900/40 dark:text-green-100'
-                      : ''
-                  }`}
-                  title={isCoverage ? `Covering (week of ${a.coverage_week})` : undefined}
+                      ? `Covering (week of ${a.coverage_week})`
+                      : isManual
+                        ? 'Assigned by an admin'
+                        : 'From the roster'
+                  }
                 >
                   {nameOf(a.volunteer_id)}
                   <button

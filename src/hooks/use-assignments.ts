@@ -33,7 +33,7 @@ export function useAssignVolunteer() {
     mutationFn: async (vars: { groupId: string; volunteerId: string }) => {
       const { error } = await supabase
         .from('assignments')
-        .insert({ group_id: vars.groupId, volunteer_id: vars.volunteerId })
+        .insert({ group_id: vars.groupId, volunteer_id: vars.volunteerId, source: 'manual' })
       if (error) throw error
     },
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['assignments'] }),

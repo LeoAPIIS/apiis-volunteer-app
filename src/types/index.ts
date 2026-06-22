@@ -43,6 +43,7 @@ export interface Assignment {
   volunteer_id: string
   assigned_at: string
   coverage_week: string | null // null = 常规分配；非 null = 该周一的临时补位分配
+  source: 'import' | 'manual' | 'coverage' // 来源：import 导入/原负责人 · manual 管理员手动指派 · 补位以 coverage_week 为准
 }
 
 export interface AttendanceRecord {
