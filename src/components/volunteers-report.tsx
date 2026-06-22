@@ -28,6 +28,11 @@ function roleLabel(r: string): string {
   return r === 'super_admin' ? 'Super Admin' : r === 'admin' ? 'Admin' : 'Volunteer'
 }
 
+// 排序优先级：super_admin → admin → volunteer（同级再按姓名 a→z）
+function roleRank(r: string): number {
+  return r === 'super_admin' ? 0 : r === 'admin' ? 1 : 2
+}
+
 export function VolunteersReport({ classFilter }: { classFilter: string }) {
   const { user, profile } = useAuth()
   const iAmSuper = profile?.role === 'super_admin'
@@ -40,7 +45,7 @@ export function VolunteersReport({ classFilter }: { classFilter: string }) {
   const [showImport, setShowImport] = useState(false)
   const [exporting, setExporting] = useState(false)
 
-  // 按班级筛选 → 搜索(姓名)→ 按姓名 a→z
+  // 按班级筛选 → 搜索 → 角色置顶(super/admin)再按姓名 a→z
   const rows = useMemo(() => {
     const all = data ?? []
     let list = all
@@ -60,8 +65,10 @@ export function VolunteersReport({ classFilter }: { classFilter: string }) {
       list = list.filter(
         (v) => v.full_name.toLowerCase().includes(q) || (v.email || '').toLowerCase().includes(q),
       )
-    return [...list].sort((a, b) =>
-      a.full_name.localeCompare(b.full_name, undefined, { sensitivity: 'base', numeric: true }),
+    return [...list].sort(
+      (a, b) =>
+        roleRank(a.role) - roleRank(b.role) ||
+        a.full_name.localeCompare(b.full_name, undefined, { sensitivity: 'base', numeric: true }),
     )
   }, [data, assignmentsQ.data, groupsQ.data, classFilter, query])
 
@@ -228,7 +235,7 @@ export function VolunteersReport({ classFilter }: { classFilter: string }) {
       )}
 
       <p className="text-muted-foreground text-xs">
-        Sorted A–Z by name. Only a <b>super admin</b> can import, promote/demote, or delete users —
+        Admins shown first, then A–Z by name. Only a <b>super admin</b> can import, promote/demote, or delete users —
         admins manage assignments, attendance &amp; reports; volunteers record attendance. You can&apos;t
         act on your own row or a super admin.
       </p>
