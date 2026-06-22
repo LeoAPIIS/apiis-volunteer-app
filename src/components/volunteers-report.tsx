@@ -72,6 +72,28 @@ export function VolunteersReport({ classFilter }: { classFilter: string }) {
     )
   }, [data, assignmentsQ.data, groupsQ.data, classFilter, query])
 
+  // 每个志愿者的具体组名(客户端用 assignments + groups 拼出),带简短班级码,如 "6P · Group 1"
+  const groupsByVolunteer = useMemo(() => {
+    const groupById = new Map((groupsQ.data ?? []).map((g) => [g.id, g]))
+    const map = new Map<string, { id: string; label: string; title: string }[]>()
+    for (const a of assignmentsQ.data ?? []) {
+      const g = groupById.get(a.group_id)
+      if (!g) continue
+      const cls = g.cohort?.name ?? ''
+      const short = cls.replace(/^MMin\s+/i, '').split(/\s+/)[0] || cls
+      const arr = map.get(a.volunteer_id) ?? []
+      arr.push({
+        id: a.id,
+        label: short ? `${short} · ${g.name}` : g.name,
+        title: cls ? `${cls} · ${g.name}` : g.name,
+      })
+      map.set(a.volunteer_id, arr)
+    }
+    for (const arr of map.values())
+      arr.sort((x, y) => x.label.localeCompare(y.label, undefined, { numeric: true }))
+    return map
+  }, [assignmentsQ.data, groupsQ.data])
+
   async function onExport() {
     setExporting(true)
     try {
@@ -146,7 +168,7 @@ export function VolunteersReport({ classFilter }: { classFilter: string }) {
                 <TableHead>Name</TableHead>
                 <TableHead className="whitespace-nowrap">Email</TableHead>
                 <TableHead>Role</TableHead>
-                <TableHead className="text-center">Assigned groups</TableHead>
+                <TableHead>Assigned groups</TableHead>
                 <TableHead className="text-center">Sessions attended</TableHead>
                 <TableHead className="whitespace-nowrap">Last active</TableHead>
                 <TableHead className="text-center">Coverage given</TableHead>
@@ -158,6 +180,7 @@ export function VolunteersReport({ classFilter }: { classFilter: string }) {
                 const isSelf = v.volunteer_id === user?.id
                 const canDelete = !isSelf && iAmSuper && v.role !== 'super_admin'
                 const canToggleRole = !isSelf && iAmSuper && v.role !== 'super_admin'
+                const vGroups = groupsByVolunteer.get(v.volunteer_id) ?? []
                 return (
                   <TableRow key={v.volunteer_id}>
                     <TableCell className="font-medium">{v.full_name}</TableCell>
@@ -175,7 +198,19 @@ export function VolunteersReport({ classFilter }: { classFilter: string }) {
                         {roleLabel(v.role)}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-center tabular-nums">{v.assigned_groups}</TableCell>
+                    <TableCell>
+                      {vGroups.length === 0 ? (
+                        <span className="text-muted-foreground">—</span>
+                      ) : (
+                        <div className="flex max-w-xs flex-wrap gap-1">
+                          {vGroups.map((g) => (
+                            <Badge key={g.id} variant="outline" className="font-normal" title={g.title}>
+                              {g.label}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </TableCell>
                     <TableCell className="text-center tabular-nums">{v.sessions_recorded}</TableCell>
                     <TableCell className="whitespace-nowrap">{v.last_active ?? '—'}</TableCell>
                     <TableCell className="text-center tabular-nums">{v.coverage_count}</TableCell>
