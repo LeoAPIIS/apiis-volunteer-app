@@ -51,6 +51,23 @@ export function useUnassign() {
   })
 }
 
+/** 清空所有「志愿者→Group」分配（仅 super_admin，调用 RPC）。重传名单前重置用。 */
+export function useClearAssignments() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.rpc('admin_clear_assignments')
+      if (error) throw error
+      return data as number
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['assignments'] })
+      void qc.invalidateQueries({ queryKey: ['volunteer-activity'] })
+      void qc.invalidateQueries({ queryKey: ['my-groups'] })
+    },
+  })
+}
+
 export interface VolunteerActivity {
   volunteer_id: string
   full_name: string

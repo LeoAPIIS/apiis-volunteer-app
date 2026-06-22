@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
-import { Download, Lock, ShieldCheck, ShieldOff, Trash2, Upload } from 'lucide-react'
+import { Download, Eraser, Lock, ShieldCheck, ShieldOff, Trash2, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuth } from '@/lib/auth'
 import { exportVolunteers } from '@/lib/report'
 import {
   useAssignments,
+  useClearAssignments,
   useDeleteVolunteer,
   useSetUserRole,
   useVolunteerActivity,
@@ -41,6 +42,7 @@ export function VolunteersReport({ classFilter }: { classFilter: string }) {
   const groupsQ = useAllGroups()
   const del = useDeleteVolunteer()
   const setRole = useSetUserRole()
+  const clearAssignments = useClearAssignments()
   const [query, setQuery] = useState('')
   const [showImport, setShowImport] = useState(false)
   const [exporting, setExporting] = useState(false)
@@ -130,6 +132,19 @@ export function VolunteersReport({ classFilter }: { classFilter: string }) {
     )
   }
 
+  function onClearAssignments() {
+    if (
+      !window.confirm(
+        'Clear ALL volunteer → group assignments?\n\nEvery group becomes empty so you can re-import a clean roster without duplicates. This also removes any current coverage claims. Volunteer accounts, students and attendance are NOT affected. This cannot be undone.',
+      )
+    )
+      return
+    clearAssignments.mutate(undefined, {
+      onSuccess: (n) => toast.success(`Cleared ${n} assignment(s). Now re-import your roster.`),
+      onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+    })
+  }
+
   if (isLoading) return <Spinner />
 
   return (
@@ -142,6 +157,17 @@ export function VolunteersReport({ classFilter }: { classFilter: string }) {
           className="max-w-xs"
         />
         <div className="flex items-center gap-2">
+          {iAmSuper && (
+            <Button
+              variant="outline"
+              onClick={onClearAssignments}
+              disabled={clearAssignments.isPending}
+              title="Remove all group assignments before re-importing a roster"
+            >
+              <Eraser className="size-4" />
+              {clearAssignments.isPending ? 'Clearing…' : 'Clear group assignments'}
+            </Button>
+          )}
           {iAmSuper && (
             <Button
               variant={showImport ? 'secondary' : 'outline'}
