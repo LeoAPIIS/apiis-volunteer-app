@@ -2,6 +2,7 @@ import { useAuth } from '@/lib/auth'
 import { useMarkAllRead, useNotifications } from '@/hooks/use-scheduling'
 import { cn } from '@/lib/utils'
 import { AvailabilityActions } from '@/components/availability-actions'
+import { CoverageNeeded } from '@/components/coverage-needed'
 import { Button } from '@/components/ui/button'
 
 export function NotificationsPage() {
@@ -22,6 +23,8 @@ export function NotificationsPage() {
           Mark all read
         </Button>
       </div>
+
+      <CoverageNeeded />
 
       {isLoading ? (
         <p className="text-muted-foreground text-sm">Loading…</p>

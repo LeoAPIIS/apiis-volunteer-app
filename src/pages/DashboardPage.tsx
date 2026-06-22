@@ -5,7 +5,6 @@ import { useMyGroups } from '@/hooks/use-groups'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { CoverageNeeded } from '@/components/coverage-needed'
 
 export function DashboardPage() {
   const { user, profile } = useAuth()
@@ -19,8 +18,6 @@ export function DashboardPage() {
           Welcome, {profile?.full_name}. Select a group to record attendance.
         </p>
       </div>
-
-      <CoverageNeeded />
 
       {isLoading ? (
         <p className="text-muted-foreground text-sm">Loading your groups…</p>
