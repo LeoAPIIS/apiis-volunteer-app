@@ -2,19 +2,14 @@ import { Link } from 'react-router-dom'
 import { Video } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
 import { useMyGroups } from '@/hooks/use-groups'
-import { useIsSessionWeek } from '@/hooks/use-scheduling'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { nextWeekMonday } from '@/lib/date'
-import { AvailabilityCard } from '@/components/availability-card'
 import { CoverageNeeded } from '@/components/coverage-needed'
 
 export function DashboardPage() {
   const { user, profile } = useAuth()
   const { data: groups, isLoading, isError } = useMyGroups(user?.id)
-  const week = nextWeekMonday()
-  const { data: isSessionWeek } = useIsSessionWeek(week)
 
   return (
     <div className="flex flex-col gap-6">
@@ -25,7 +20,6 @@ export function DashboardPage() {
         </p>
       </div>
 
-      {user && isSessionWeek !== false && <AvailabilityCard volunteerId={user.id} week={week} />}
       <CoverageNeeded />
 
       {isLoading ? (
