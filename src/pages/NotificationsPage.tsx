@@ -9,6 +9,8 @@ export function NotificationsPage() {
   const { user } = useAuth()
   const { data: items, isLoading } = useNotifications()
   const markAll = useMarkAllRead()
+  // 通用「Coverage needed」通知与上面可认领的卡片重复，隐藏它(卡片才是可操作的)
+  const visible = (items ?? []).filter((n) => n.type !== 'coverage_request')
 
   return (
     <div className="flex flex-col gap-4">
@@ -28,11 +30,11 @@ export function NotificationsPage() {
 
       {isLoading ? (
         <p className="text-muted-foreground text-sm">Loading…</p>
-      ) : !items || items.length === 0 ? (
+      ) : visible.length === 0 ? (
         <p className="text-muted-foreground text-sm">No notifications.</p>
       ) : (
         <div className="flex flex-col gap-2">
-          {items.map((n) => {
+          {visible.map((n) => {
             // weekly_check 通知里直接给可用性按钮；周次从正文(…week of YYYY-MM-DD…)解析
             const availWeek =
               n.type === 'weekly_check' ? (n.body?.match(/\d{4}-\d{2}-\d{2}/)?.[0] ?? null) : null

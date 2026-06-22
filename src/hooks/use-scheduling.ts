@@ -100,6 +100,7 @@ export function useUnreadCount() {
         .from('notifications')
         .select('*', { count: 'exact', head: true })
         .eq('is_read', false)
+        .neq('type', 'coverage_request')
       if (error) throw error
       return count ?? 0
     },
