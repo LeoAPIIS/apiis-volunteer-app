@@ -177,7 +177,6 @@ export function ImportVolunteers() {
   const classesQ = useClasses()
   const groupsQ = useAllGroups()
   const [csv, setCsv] = useState('')
-  const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
   const [result, setResult] = useState<ImportResult | null>(null)
@@ -189,10 +188,6 @@ export function ImportVolunteers() {
     const { body: rows, get } = mapCsvColumns(parseCsv(csv), { name: 0, email: 1, class: 2, group: 3 })
     if (rows.length === 0) {
       toast.error('Nothing to import')
-      return
-    }
-    if (password.trim().length < 6) {
-      toast.error('Temporary password must be at least 6 characters')
       return
     }
     setBusy(true)
@@ -235,7 +230,7 @@ export function ImportVolunteers() {
         p_email: email,
         p_full_name: name,
         p_phone: null,
-        p_password: password,
+        p_password: '123456', // 仅用于「新账号」的初始密码；已存在的用户 RPC 不会改其密码
         p_group_id: groupIds[0] ?? null,
       })
       if (error) {
@@ -299,21 +294,12 @@ export function ImportVolunteers() {
         <p className="text-muted-foreground text-sm">
           One row per volunteer: <code>Name, Email, Class, Group</code> (keep a header row — columns are
           matched by name). A volunteer can have <b>several groups</b> in one cell — write{' '}
-          <code>&quot;17,18&quot;</code> (quoted) or <code>17;18</code>. New accounts get the temporary
-          password below. <b>Re-importing updates that volunteer&apos;s groups only for the classes in the
-          file</b> — their groups in other classes are left untouched — so the roster won&apos;t pile
-          up duplicates.
+          <code>&quot;17,18&quot;</code> (quoted) or <code>17;18</code>. New accounts are created with
+          initial password <code>123456</code>; existing volunteers are only updated (their password
+          isn&apos;t changed). <b>Re-importing updates that volunteer&apos;s groups only for the classes
+          in the file</b> — their groups in other classes are left untouched — so the roster won&apos;t
+          pile up duplicates.
         </p>
-        <div className="flex flex-col gap-1">
-          <Label htmlFor="temp-pw">Temporary password (for new accounts)</Label>
-          <Input
-            id="temp-pw"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="at least 6 characters"
-            className="w-[260px]"
-          />
-        </div>
         <div className="flex flex-col gap-1">
           <Label>Upload a CSV file (or paste below)</Label>
           <CsvFileInput onText={setCsv} />
