@@ -253,16 +253,29 @@ export function ImportVolunteers() {
             .upsert(extra, { onConflict: 'group_id,volunteer_id' })
           if (aErr) errors.push(`${email}: extra groups — ${aErr.message}`)
         }
-        // 幂等:删掉该志愿者「不在本次名单内」的旧永久分配(coverage_week 为 null)。
-        // 于是再次导入 = 用文件里的组覆盖旧组,小组上不会累积多人;补位(coverage)分配不受影响。
+        // 幂等(按班级):只清理该志愿者「在本次导入涉及的班级内、且不在本次名单里」的旧永久分配。
+        // 例如导入他在 6P 的组,不会动他在 6L 等其它班级的组;补位(coverage)分配也不受影响。
         if (uid && groupIds.length > 0) {
-          const { error: dErr } = await supabase
-            .from('assignments')
-            .delete()
-            .eq('volunteer_id', uid as string)
-            .is('coverage_week', null)
-            .not('group_id', 'in', `(${groupIds.join(',')})`)
-          if (dErr) errors.push(`${email}: cleanup old groups — ${dErr.message}`)
+          const importedSet = new Set(groupIds)
+          // 本次导入涉及到的班级(cohort)
+          const targetCohorts = new Set(
+            groupIds
+              .map((gid) => groups.find((g) => g.id === gid)?.cohort_id)
+              .filter((c): c is string => !!c),
+          )
+          // 同班级里、不在本次名单内的组 → 待清理(其它班级一律保留)
+          const stale = groups
+            .filter((g) => targetCohorts.has(g.cohort_id) && !importedSet.has(g.id))
+            .map((g) => g.id)
+          if (stale.length > 0) {
+            const { error: dErr } = await supabase
+              .from('assignments')
+              .delete()
+              .eq('volunteer_id', uid as string)
+              .is('coverage_week', null)
+              .in('group_id', stale)
+            if (dErr) errors.push(`${email}: cleanup old groups — ${dErr.message}`)
+          }
         }
       }
       setProgress({ done: i + 1, total: entries.length })
@@ -287,9 +300,9 @@ export function ImportVolunteers() {
           One row per volunteer: <code>Name, Email, Class, Group</code> (keep a header row — columns are
           matched by name). A volunteer can have <b>several groups</b> in one cell — write{' '}
           <code>&quot;17,18&quot;</code> (quoted) or <code>17;18</code>. New accounts get the temporary
-          password below. <b>Re-importing replaces that volunteer&apos;s groups</b> with exactly
-          what&apos;s in the file, so updating the roster won&apos;t pile up duplicates (no manual
-          clearing needed).
+          password below. <b>Re-importing updates that volunteer&apos;s groups only for the classes in the
+          file</b> — their groups in other classes are left untouched — so the roster won&apos;t pile
+          up duplicates.
         </p>
         <div className="flex flex-col gap-1">
           <Label htmlFor="temp-pw">Temporary password (for new accounts)</Label>
