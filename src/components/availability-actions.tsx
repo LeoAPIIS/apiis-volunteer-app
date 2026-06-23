@@ -8,7 +8,7 @@ export function AvailabilityActions({ volunteerId, week }: { volunteerId: string
   const { data } = useMyAvailability(volunteerId, week)
   const setAvail = useSetAvailability(volunteerId, week)
   const current = data?.is_available ?? null
-  const deadline = availabilityDeadline(week) // 周六 19:59(UTC+8)
+  const deadline = availabilityDeadline(week) // 周六 20:00(UTC+8)
   const closed = isPast(deadline)
 
   function set(v: boolean) {

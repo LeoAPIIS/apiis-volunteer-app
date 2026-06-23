@@ -10,9 +10,9 @@ function instant(weekMondayISO: string, dayOffset: number, hour: number, minute:
   return Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate(), hour - TZ, minute)
 }
 
-/** 可用性回复截止：该周周六 19:59（UTC+8，补位汇总 20:00 之前）。 */
+/** 可用性回复截止：该周周六 20:00（UTC+8）。 */
 export function availabilityDeadline(weekMondayISO: string): number {
-  return instant(weekMondayISO, -2, 19, 59)
+  return instant(weekMondayISO, -2, 20, 0)
 }
 
 /**
