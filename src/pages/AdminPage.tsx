@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Check } from 'lucide-react'
+import { Check, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAllGroups, useClasses } from '@/hooks/use-groups'
 import { useAssignments, useAllUsers } from '@/hooks/use-assignments'
@@ -9,7 +9,12 @@ import { StudentsReport } from '@/components/students-report'
 import { SchedulingAdmin } from '@/components/scheduling-admin'
 import { VolunteersReport } from '@/components/volunteers-report'
 import { Spinner } from '@/components/spinner'
-import { useFeedback, useSetFeedbackResolved, type Feedback } from '@/hooks/use-feedback'
+import {
+  useDeleteFeedback,
+  useFeedback,
+  useSetFeedbackResolved,
+  type Feedback,
+} from '@/hooks/use-feedback'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -91,6 +96,7 @@ function RecordsTab({ classFilter }: { classFilter: string }) {
 function FeedbackTab() {
   const { data: items, isLoading } = useFeedback()
   const setResolved = useSetFeedbackResolved()
+  const del = useDeleteFeedback()
   if (isLoading) return <Spinner />
   if (!items || items.length === 0)
     return <p className="text-muted-foreground text-sm">No feedback yet.</p>
@@ -108,6 +114,19 @@ function FeedbackTab() {
         onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
       },
     )
+  }
+
+  function onDelete(f: Feedback) {
+    if (
+      !window.confirm(
+        `Delete this feedback from ${f.full_name || 'Unknown'}? This permanently removes it.`,
+      )
+    )
+      return
+    del.mutate(f.id, {
+      onSuccess: () => toast.success('Feedback deleted'),
+      onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+    })
   }
 
   return (
@@ -132,7 +151,7 @@ function FeedbackTab() {
             </span>
           </div>
           <p className="text-muted-foreground mt-1 text-sm whitespace-pre-wrap">{f.message}</p>
-          <div className="mt-2 flex justify-end">
+          <div className="mt-2 flex justify-end gap-2">
             <Button
               size="sm"
               variant={f.resolved ? 'outline' : 'secondary'}
@@ -140,6 +159,15 @@ function FeedbackTab() {
               onClick={() => toggle(f)}
             >
               {f.resolved ? 'Reopen' : 'Mark resolved'}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-destructive hover:text-destructive"
+              disabled={del.isPending}
+              onClick={() => onDelete(f)}
+            >
+              <Trash2 className="size-3.5" /> Delete
             </Button>
           </div>
         </div>

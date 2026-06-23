@@ -40,6 +40,18 @@ export function useFeedback() {
   })
 }
 
+/** 删除反馈（仅管理员，RLS 限制）。彻底删行,不留残余。 */
+export function useDeleteFeedback() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('feedback').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['feedback'] }),
+  })
+}
+
 /** 标记反馈为已解决 / 重新打开（仅管理员，RLS 限制）。 */
 export function useSetFeedbackResolved() {
   const qc = useQueryClient()
