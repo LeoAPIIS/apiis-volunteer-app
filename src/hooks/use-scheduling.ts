@@ -2,7 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import type { AppSettings, Notification } from '@/types'
 
-// ============================== 可用性 ==============================
+// ============================== 可用性（按组）==============================
+/** 该志愿者本周的逐组可用性（每组一条）。 */
 export function useMyAvailability(volunteerId: string | undefined, week: string) {
   return useQuery({
     queryKey: ['my-availability', volunteerId, week],
@@ -10,12 +11,11 @@ export function useMyAvailability(volunteerId: string | undefined, week: string)
     queryFn: async () => {
       const { data, error } = await supabase
         .from('availability')
-        .select('is_available')
+        .select('group_id, is_available')
         .eq('volunteer_id', volunteerId as string)
         .eq('week_start_date', week)
-        .maybeSingle()
       if (error) throw error
-      return data as { is_available: boolean | null } | null
+      return (data ?? []) as { group_id: string; is_available: boolean | null }[]
     },
   })
 }
@@ -58,15 +58,16 @@ export function useNextSession() {
 export function useSetAvailability(volunteerId: string, week: string) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async (isAvailable: boolean) => {
+    mutationFn: async (vars: { groupId: string; isAvailable: boolean }) => {
       const { error } = await supabase.from('availability').upsert(
         {
           volunteer_id: volunteerId,
+          group_id: vars.groupId,
           week_start_date: week,
-          is_available: isAvailable,
+          is_available: vars.isAvailable,
           responded_at: new Date().toISOString(),
         },
-        { onConflict: 'volunteer_id,week_start_date' },
+        { onConflict: 'volunteer_id,group_id,week_start_date' },
       )
       if (error) throw error
     },
@@ -203,12 +204,21 @@ export function useWeekAvailability(week: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('availability')
-        .select('is_available, volunteer:profiles(full_name)')
+        .select('is_available, volunteer:profiles(full_name), group:groups(name, cohorts(name))')
         .eq('week_start_date', week)
       if (error) throw error
       return (data ?? []).map((r) => {
-        const rec = r as unknown as { is_available: boolean | null; volunteer: { full_name: string } | null }
-        return { is_available: rec.is_available, name: rec.volunteer?.full_name ?? '' }
+        const rec = r as unknown as {
+          is_available: boolean | null
+          volunteer: { full_name: string } | null
+          group: { name: string; cohorts: { name: string } | null } | null
+        }
+        return {
+          is_available: rec.is_available,
+          name: rec.volunteer?.full_name ?? '',
+          group_name: rec.group?.name ?? '',
+          class_name: rec.group?.cohorts?.name ?? '',
+        }
       })
     },
   })
