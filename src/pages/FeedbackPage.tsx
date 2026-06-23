@@ -51,10 +51,12 @@ export function FeedbackPage() {
                 id="feedback-msg"
                 rows={6}
                 required
+                maxLength={500}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="What's working, what's not, ideas to improve…"
               />
+              <p className="text-muted-foreground text-right text-xs">{message.length}/500</p>
             </div>
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => navigate(-1)}>

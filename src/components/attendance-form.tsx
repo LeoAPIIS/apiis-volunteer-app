@@ -171,6 +171,8 @@ export function AttendanceForm({ students, existing, groupId, sessionDate, volun
                       value={r.notes}
                       onChange={(e) => update(s.id, { notes: e.target.value })}
                       placeholder="Optional"
+                      maxLength={200}
+                      title="Max 200 characters"
                     />
                   </TableCell>
                 </TableRow>
