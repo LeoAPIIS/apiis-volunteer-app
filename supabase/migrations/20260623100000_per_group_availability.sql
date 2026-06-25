@@ -44,7 +44,7 @@ begin
 
   -- 按「志愿者 × 其负责(永久)的组」预置待回复行(coverage_week 为 null = 常驻负责人)
   insert into public.availability (volunteer_id, group_id, week_start_date, is_available)
-  select distinct a.volunteer_id, a.group_id, wk, null
+  select distinct a.volunteer_id, a.group_id, wk, null::boolean
   from public.assignments a
   join public.groups g on g.id = a.group_id
   join public.cohorts c on c.id = g.cohort_id
