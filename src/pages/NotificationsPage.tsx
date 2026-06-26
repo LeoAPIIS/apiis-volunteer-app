@@ -1,30 +1,25 @@
+import { useEffect } from 'react'
 import { useAuth } from '@/lib/auth'
 import { useMarkAllRead, useNotifications } from '@/hooks/use-scheduling'
 import { cn } from '@/lib/utils'
 import { AvailabilityActions } from '@/components/availability-actions'
 import { CoverageNeeded } from '@/components/coverage-needed'
-import { Button } from '@/components/ui/button'
 
 export function NotificationsPage() {
   const { user } = useAuth()
   const { data: items, isLoading } = useNotifications()
-  const markAll = useMarkAllRead()
+  const { mutate: markAllRead } = useMarkAllRead()
   // 通用「Coverage needed」通知与上面可认领的卡片重复，隐藏它(卡片才是可操作的)
   const visible = (items ?? []).filter((n) => n.type !== 'coverage_request')
 
+  // 打开通知页即自动标记为已读(红点随之清零);标记后 items 重新拉取、无未读 → 不再触发
+  useEffect(() => {
+    if ((items ?? []).some((n) => !n.is_read)) markAllRead()
+  }, [items, markAllRead])
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Notifications</h1>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={markAll.isPending}
-          onClick={() => markAll.mutate()}
-        >
-          Mark all read
-        </Button>
-      </div>
+      <h1 className="text-2xl font-semibold tracking-tight">Notifications</h1>
 
       <CoverageNeeded />
 
