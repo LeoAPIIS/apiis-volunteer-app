@@ -25,9 +25,16 @@ interface Props {
   users: Profile[]
   assignments: Assignment[]
   checkStatus: CheckStatus | null
+  originals: Map<string, string> // volunteer_id → 原属组短码,如 "7L-G7"(用于补位/管理员指派徽章)
 }
 
-export function GroupAssignmentCard({ group, users, assignments, checkStatus }: Props) {
+export function GroupAssignmentCard({
+  group,
+  users,
+  assignments,
+  checkStatus,
+  originals,
+}: Props) {
   const assign = useAssignVolunteer()
   const unassign = useUnassign()
   const setMark = useSetGroupCheckMark()
@@ -89,6 +96,8 @@ export function GroupAssignmentCard({ group, users, assignments, checkStatus }: 
               // 导入名单/本来的负责人 → 保持原样(灰)。补位颜色优先级最高。
               const isCoverage = a.coverage_week != null
               const isManual = !isCoverage && a.source === 'manual'
+              // 补位/管理员指派的人,名字后标其原属组(如 "(7L-G7)")
+              const orig = isCoverage || isManual ? originals.get(a.volunteer_id) : undefined
               const tint = isCoverage
                 ? ' bg-green-100 text-green-900 dark:bg-green-900/40 dark:text-green-100'
                 : isManual
@@ -108,6 +117,7 @@ export function GroupAssignmentCard({ group, users, assignments, checkStatus }: 
                   }
                 >
                   {nameOf(a.volunteer_id)}
+                  {orig ? <span className="font-normal opacity-80">&nbsp;({orig})</span> : null}
                   <button
                     type="button"
                     onClick={() => void onRemove(a)}

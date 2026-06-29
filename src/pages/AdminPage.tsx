@@ -27,6 +27,14 @@ import {
 } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
+// 组短码,如 MMin 7L Monday Night + Group 7 → "7L-G7"
+function groupCode(g: { name: string; cohort: { name: string } | null }): string {
+  const cls = g.cohort?.name ?? ''
+  const sec = cls.replace(/^MMin\s+/i, '').split(/\s+/)[0] || cls
+  const num = g.name.replace(/^group\s*/i, '')
+  return `${sec}-G${num}`
+}
+
 function AssignmentsTab({ classFilter }: { classFilter: string }) {
   const groupsQ = useAllGroups()
   const usersQ = useAllUsers()
@@ -39,9 +47,25 @@ function AssignmentsTab({ classFilter }: { classFilter: string }) {
   const users = usersQ.data ?? []
   const assignments = assignmentsQ.data ?? []
   const marksByGroup = new Map((marksQ.data ?? []).map((m) => [m.group_id, m.status]))
-  const groups = (groupsQ.data ?? []).filter(
-    (g) => classFilter === 'all' || g.cohort_id === classFilter,
-  )
+
+  // 每个志愿者的「原属」组(import 来源、非补位),用于在补位/管理员指派的徽章后标注,如 "(7L-G7)"
+  const allGroups = groupsQ.data ?? []
+  const groupById = new Map(allGroups.map((g) => [g.id, g]))
+  const originalByVolunteer = new Map<string, string>()
+  for (const a of assignments) {
+    if (a.source !== 'import' || a.coverage_week != null) continue
+    const g = groupById.get(a.group_id)
+    if (!g) continue
+    const code = groupCode(g)
+    originalByVolunteer.set(
+      a.volunteer_id,
+      originalByVolunteer.has(a.volunteer_id)
+        ? `${originalByVolunteer.get(a.volunteer_id)}, ${code}`
+        : code,
+    )
+  }
+
+  const groups = allGroups.filter((g) => classFilter === 'all' || g.cohort_id === classFilter)
 
   if (groups.length === 0) {
     return <p className="text-muted-foreground text-sm">No groups.</p>
@@ -72,6 +96,7 @@ function AssignmentsTab({ classFilter }: { classFilter: string }) {
             users={users}
             assignments={assignments}
             checkStatus={marksByGroup.get(g.id) ?? null}
+            originals={originalByVolunteer}
           />
         ))}
       </div>
