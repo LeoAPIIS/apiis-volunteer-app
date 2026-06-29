@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { todaySG } from '@/lib/date'
 import type { AppSettings, Notification } from '@/types'
 
 // ============================== 可用性（按组）==============================
@@ -42,7 +43,7 @@ export function useNextSession() {
   return useQuery({
     queryKey: ['next-session'],
     queryFn: async () => {
-      const today = new Date().toLocaleDateString('en-CA')
+      const today = todaySG()
       const { data, error } = await supabase
         .from('class_sessions')
         .select('session_date')

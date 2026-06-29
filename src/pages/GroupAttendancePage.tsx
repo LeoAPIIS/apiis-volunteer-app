@@ -11,6 +11,7 @@ import {
   weekLabel,
   weeksForCurriculum,
 } from '@/lib/calendar'
+import { todaySG } from '@/lib/date'
 import { AttendanceForm } from '@/components/attendance-form'
 import { FullPageSpinner } from '@/components/full-page-spinner'
 import { Input } from '@/components/ui/input'
@@ -22,10 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-
-function todayLocal(): string {
-  return new Date().toLocaleDateString('en-CA') // YYYY-MM-DD
-}
 
 export function GroupAttendancePage() {
   const { groupId } = useParams<{ groupId: string }>()
@@ -39,7 +36,7 @@ export function GroupAttendancePage() {
   const group = groupQ.data
   const className = group?.cohort?.name ?? null
   const curriculum = curriculumForClass(className)
-  const today = todayLocal()
+  const today = todaySG()
   // 当前周(非超管只能记当前周)；周二班的日期 = 周一锚点 +1 天；无法识别课程时退回普通日期选择
   const curWeek = curriculum ? currentWeek(curriculum, today) : null
   const defaultDate =
