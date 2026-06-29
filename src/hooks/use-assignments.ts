@@ -15,6 +15,42 @@ export function useAllUsers() {
   })
 }
 
+// ============== 临时管理标记:某组原负责志愿者本周到没到(不计入数据,每周三清空)==============
+export type CheckStatus = 'present' | 'absent'
+
+export function useGroupCheckMarks() {
+  return useQuery({
+    queryKey: ['group-check-marks'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('group_check_marks').select('group_id, status')
+      if (error) throw error
+      return (data ?? []) as { group_id: string; status: CheckStatus }[]
+    },
+  })
+}
+
+export function useSetGroupCheckMark() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (vars: { groupId: string; status: CheckStatus | null }) => {
+      if (vars.status === null) {
+        const { error } = await supabase
+          .from('group_check_marks')
+          .delete()
+          .eq('group_id', vars.groupId)
+        if (error) throw error
+      } else {
+        const { error } = await supabase.from('group_check_marks').upsert(
+          { group_id: vars.groupId, status: vars.status, marked_at: new Date().toISOString() },
+          { onConflict: 'group_id' },
+        )
+        if (error) throw error
+      }
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['group-check-marks'] }),
+  })
+}
+
 /** 所有分配关系（管理员用）。 */
 export function useAssignments() {
   return useQuery({

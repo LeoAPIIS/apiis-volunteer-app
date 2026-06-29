@@ -1,7 +1,12 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import { toast } from 'sonner'
-import { useAssignVolunteer, useUnassign } from '@/hooks/use-assignments'
+import {
+  useAssignVolunteer,
+  useSetGroupCheckMark,
+  useUnassign,
+  type CheckStatus,
+} from '@/hooks/use-assignments'
 import type { GroupWithCohort } from '@/hooks/use-groups'
 import type { Assignment, Profile } from '@/types'
 import { Button } from '@/components/ui/button'
@@ -19,11 +24,13 @@ interface Props {
   group: GroupWithCohort
   users: Profile[]
   assignments: Assignment[]
+  checkStatus: CheckStatus | null
 }
 
-export function GroupAssignmentCard({ group, users, assignments }: Props) {
+export function GroupAssignmentCard({ group, users, assignments, checkStatus }: Props) {
   const assign = useAssignVolunteer()
   const unassign = useUnassign()
+  const setMark = useSetGroupCheckMark()
   const [selected, setSelected] = useState('')
 
   const groupAssignments = assignments.filter((a) => a.group_id === group.id)
@@ -50,6 +57,14 @@ export function GroupAssignmentCard({ group, users, assignments }: Props) {
     } catch (e) {
       toast.error(`Failed: ${(e as Error).message}`)
     }
+  }
+
+  // 临时标记本周「原负责志愿者到没到」(再点一次取消);不计入任何数据,每周三自动清空
+  function toggleMark(next: CheckStatus) {
+    setMark.mutate(
+      { groupId: group.id, status: checkStatus === next ? null : next },
+      { onError: (e) => toast.error(`Failed: ${(e as Error).message}`) },
+    )
   }
 
   return (
@@ -127,6 +142,32 @@ export function GroupAssignmentCard({ group, users, assignments }: Props) {
         ) : (
           <span className="text-muted-foreground text-sm">All volunteers assigned</span>
         )}
+
+        <div className="flex flex-wrap items-center gap-2 border-t pt-3">
+          <span className="text-muted-foreground text-xs">This week — original showed up?</span>
+          <Button
+            size="sm"
+            variant="outline"
+            className={
+              checkStatus === 'present' ? 'bg-brand-green hover:bg-brand-green/90 text-white' : ''
+            }
+            disabled={setMark.isPending}
+            onClick={() => toggleMark('present')}
+          >
+            Came
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className={
+              checkStatus === 'absent' ? 'bg-destructive hover:bg-destructive/90 text-white' : ''
+            }
+            disabled={setMark.isPending}
+            onClick={() => toggleMark('absent')}
+          >
+            No-show
+          </Button>
+        </div>
       </CardContent>
     </Card>
   )

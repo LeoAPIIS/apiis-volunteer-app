@@ -35,5 +35,9 @@ select cron.schedule('coverage-mmin7', '1 12 * * 0',      -- 周日 20:01 UTC+8 
 select cron.schedule('expire-coverage', '0 1 * * 3',      -- 周三 09:00 UTC+8
   $$ select public.expire_coverage_assignments(); $$);
 
+-- 每周三清空「原负责志愿者到没到」的临时管理标记
+select cron.schedule('clear-group-checkmarks', '0 1 * * 3',  -- 周三 09:00 UTC+8
+  $$ select public.clear_group_check_marks(); $$);
+
 -- 查看：select jobname, schedule, active from cron.job order by jobname;
 -- 取消单个：select cron.unschedule('availability-mmin6');
