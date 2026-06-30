@@ -85,7 +85,7 @@ function AssignmentsTab({ classFilter }: { classFilter: string }) {
         </span>
       </div>
       <p className="text-muted-foreground text-xs">
-        “Came / No-show” is a temporary note for tracking whether the original volunteer showed up —
+        “Present / Absent” is a temporary note for tracking whether the original volunteer showed up —
         it isn’t saved to attendance and is cleared every Wednesday.
       </p>
       <div className="grid gap-4 md:grid-cols-2">

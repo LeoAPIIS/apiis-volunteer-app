@@ -164,7 +164,7 @@ export function GroupAssignmentCard({
             disabled={setMark.isPending}
             onClick={() => toggleMark('present')}
           >
-            Came
+            Present
           </Button>
           <Button
             size="sm"
@@ -175,7 +175,7 @@ export function GroupAssignmentCard({
             disabled={setMark.isPending}
             onClick={() => toggleMark('absent')}
           >
-            No-show
+            Absent
           </Button>
         </div>
       </CardContent>
