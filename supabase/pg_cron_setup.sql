@@ -39,5 +39,9 @@ select cron.schedule('expire-coverage', '0 1 * * 3',      -- 周三 09:00 UTC+8
 select cron.schedule('clear-group-checkmarks', '0 1 * * 3',  -- 周三 09:00 UTC+8
   $$ select public.clear_group_check_marks(); $$);
 
+-- 每周三清空「管理员手动指派」的分配(只留导入的原负责人)
+select cron.schedule('clear-manual-assignments', '0 1 * * 3',  -- 周三 09:00 UTC+8
+  $$ select public.clear_manual_assignments(); $$);
+
 -- 查看：select jobname, schedule, active from cron.job order by jobname;
 -- 取消单个：select cron.unschedule('availability-mmin6');
