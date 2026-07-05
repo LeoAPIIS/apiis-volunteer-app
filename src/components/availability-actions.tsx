@@ -9,7 +9,7 @@ export function AvailabilityActions({ volunteerId, week }: { volunteerId: string
   const { data: groups } = useMyGroups(volunteerId)
   const { data: avail } = useMyAvailability(volunteerId, week)
   const setAvail = useSetAvailability(volunteerId, week)
-  const deadline = availabilityDeadline(week) // 周六 20:00(UTC+8)
+  const deadline = availabilityDeadline(week) // 周六 22:59(UTC+8)
   const closed = isPast(deadline)
 
   const byGroup = new Map((avail ?? []).map((a) => [a.group_id, a.is_available]))

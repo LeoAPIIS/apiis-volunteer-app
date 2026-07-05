@@ -26,10 +26,9 @@ select cron.schedule('availability-mmin7', '0 12 * * 5',  -- 周五 20:00 UTC+8
   $$ select public.run_weekly_availability_check(true, 'MMin 7'); $$);
 
 -- 补位征集（覆盖全部课程缺口；p_curriculum 仅决定收件人那一批；true = 同时发邮件）
-select cron.schedule('coverage-mmin6', '1 12 * * 6',      -- 周六 20:01 UTC+8 → 发 MMin 6 志愿者(晚 1 分钟,在可用性截止 20:00 之后)
-  $$ select public.run_summarize_coverage(true, 'MMin 6'); $$);
-select cron.schedule('coverage-mmin7', '1 12 * * 0',      -- 周日 20:01 UTC+8 → 发 MMin 7 志愿者
-  $$ select public.run_summarize_coverage(true, 'MMin 7'); $$);
+-- 补位征集:每周六 23:00 UTC+8(在可用性截止 22:59 之后),发给全体志愿者(补位可跨课程认领)
+select cron.schedule('coverage-all', '0 15 * * 6',        -- 周六 23:00 UTC+8
+  $$ select public.run_summarize_coverage(true, null); $$);
 
 -- 每周三清除上周的临时补位分配（被补周一已过去的）
 select cron.schedule('expire-coverage', '0 1 * * 3',      -- 周三 09:00 UTC+8
