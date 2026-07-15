@@ -61,29 +61,36 @@ export interface ReportData {
 
 /** 拉取并透视为「学员 × 周」报表（含 Contribution 分数与备注）。传 classId 限定班级，否则全部。 */
 export async function fetchReportData(classId?: string): Promise<ReportData> {
-  let studentQuery = supabase
-    .from('students')
-    .select('id, full_name, email, groups!inner(name, cohort_id, cohorts(name))')
-    .order('full_name')
-  if (classId) studentQuery = studentQuery.eq('groups.cohort_id', classId)
-  const { data: sData, error: sErr } = await studentQuery
-  if (sErr) throw sErr
+  // Supabase 单次最多返回 ~1000 行;大班 / 「全部」会被截断,故用 range() 分页循环取全。
+  const PAGE = 1000
 
-  const students: ReportStudent[] = (sData ?? []).map((r) => {
-    const rec = r as unknown as {
-      id: string
-      full_name: string
-      email: string | null
-      groups: { name: string; cohorts: { name: string } | null } | null
-    }
-    return {
-      id: rec.id,
-      full_name: rec.full_name,
-      email: rec.email ?? '',
-      group_name: rec.groups?.name ?? '',
-      class_name: rec.groups?.cohorts?.name ?? '',
-    }
-  })
+  type StudentRow = {
+    id: string
+    full_name: string
+    email: string | null
+    groups: { name: string; cohorts: { name: string } | null } | null
+  }
+  const sData: StudentRow[] = []
+  for (let from = 0; ; from += PAGE) {
+    const base = supabase
+      .from('students')
+      .select('id, full_name, email, groups!inner(name, cohort_id, cohorts(name))')
+    const { data, error } = await (classId ? base.eq('groups.cohort_id', classId) : base)
+      .order('id')
+      .range(from, from + PAGE - 1)
+    if (error) throw error
+    const rows = (data ?? []) as unknown as StudentRow[]
+    sData.push(...rows)
+    if (rows.length < PAGE) break
+  }
+
+  const students: ReportStudent[] = sData.map((rec) => ({
+    id: rec.id,
+    full_name: rec.full_name,
+    email: rec.email ?? '',
+    group_name: rec.groups?.name ?? '',
+    class_name: rec.groups?.cohorts?.name ?? '',
+  }))
   students.sort(
     (a, b) =>
       a.class_name.localeCompare(b.class_name) ||
@@ -91,19 +98,25 @@ export async function fetchReportData(classId?: string): Promise<ReportData> {
       a.full_name.localeCompare(b.full_name),
   )
 
-  let attQuery = supabase
-    .from('attendance_records')
-    .select('student_id, session_date, contribution, notes, groups!inner(cohort_id)')
-  if (classId) attQuery = attQuery.eq('groups.cohort_id', classId)
-  const { data: aData, error: aErr } = await attQuery
-  if (aErr) throw aErr
-
-  const records = (aData ?? []) as unknown as {
+  type AttRow = {
     student_id: string
     session_date: string
     contribution: number | null
     notes: string | null
-  }[]
+  }
+  const records: AttRow[] = []
+  for (let from = 0; ; from += PAGE) {
+    const base = supabase
+      .from('attendance_records')
+      .select('student_id, session_date, contribution, notes, groups!inner(cohort_id)')
+    const { data, error } = await (classId ? base.eq('groups.cohort_id', classId) : base)
+      .order('id')
+      .range(from, from + PAGE - 1)
+    if (error) throw error
+    const rows = (data ?? []) as unknown as AttRow[]
+    records.push(...rows)
+    if (rows.length < PAGE) break
+  }
 
   const dateSet = new Set<string>()
   const cells: ReportData['cells'] = {}
