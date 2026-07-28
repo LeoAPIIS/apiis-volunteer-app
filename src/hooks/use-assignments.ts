@@ -153,6 +153,36 @@ export function useDeleteVolunteer() {
   })
 }
 
+export interface AssignmentHistoryRow {
+  id: string
+  week_start_date: string
+  source: string // 'manual' | 'coverage'
+  group_name: string | null
+  class_name: string | null
+  volunteer_name: string | null
+  volunteer_email: string | null
+  archived_at: string
+}
+
+/** 分配历史（审计）：每周三清理前归档的 manual / coverage 分配。管理员只读。 */
+export function useAssignmentHistory() {
+  return useQuery({
+    queryKey: ['assignment-history'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('assignment_history')
+        .select(
+          'id, week_start_date, source, group_name, class_name, volunteer_name, volunteer_email, archived_at',
+        )
+        .order('week_start_date', { ascending: false })
+        .order('class_name')
+        .order('group_name')
+      if (error) throw error
+      return (data ?? []) as AssignmentHistoryRow[]
+    },
+  })
+}
+
 /** 志愿者出席/活跃度（管理员专用，调用聚合 RPC）。 */
 export function useVolunteerActivity() {
   return useQuery({

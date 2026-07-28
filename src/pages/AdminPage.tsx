@@ -8,6 +8,7 @@ import { GroupAssignmentCard } from '@/components/group-assignment-card'
 import { StudentsReport } from '@/components/students-report'
 import { SchedulingAdmin } from '@/components/scheduling-admin'
 import { VolunteersReport } from '@/components/volunteers-report'
+import { AssignmentHistory } from '@/components/assignment-history'
 import { Spinner } from '@/components/spinner'
 import {
   useDeleteFeedback,
@@ -244,6 +245,7 @@ export function AdminPage() {
           <TabsTrigger value="students">Students</TabsTrigger>
           <TabsTrigger value="volunteers">Volunteers</TabsTrigger>
           <TabsTrigger value="scheduling">Scheduling</TabsTrigger>
+          <TabsTrigger value="history">History</TabsTrigger>
           <TabsTrigger value="feedback">Feedback</TabsTrigger>
         </TabsList>
         <TabsContent value="assignments" className="mt-4">
@@ -260,6 +262,9 @@ export function AdminPage() {
         </TabsContent>
         <TabsContent value="scheduling" className="mt-4">
           <SchedulingAdmin />
+        </TabsContent>
+        <TabsContent value="history" className="mt-4">
+          <AssignmentHistory />
         </TabsContent>
         <TabsContent value="feedback" className="mt-4">
           <FeedbackTab />
