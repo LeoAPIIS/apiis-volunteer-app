@@ -168,6 +168,23 @@ export function useClaimCoverage() {
   })
 }
 
+/** 管理员：重新放出补位(认领人来不了 → 释放并改回 open)。 */
+export function useReopenCoverage() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (requestId: string) => {
+      const { error } = await supabase.rpc('admin_reopen_coverage', { p_request_id: requestId })
+      if (error) throw error
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['coverage-week'] })
+      void qc.invalidateQueries({ queryKey: ['coverage-open'] })
+      void qc.invalidateQueries({ queryKey: ['assignments'] })
+      void qc.invalidateQueries({ queryKey: ['my-groups'] })
+    },
+  })
+}
+
 // ============================== 管理员：设置 ==============================
 export function useAppSettings() {
   return useQuery({

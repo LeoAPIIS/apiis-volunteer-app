@@ -6,6 +6,7 @@ import {
   useAppSettings,
   useIsSessionWeek,
   useNextSession,
+  useReopenCoverage,
   useRunSummarize,
   useRunWeeklyCheck,
   useUpdateAppSettings,
@@ -65,6 +66,7 @@ export function SchedulingAdmin() {
   const runSummarize = useRunSummarize()
   const availQ = useWeekAvailability(week)
   const coverQ = useWeekCoverage(week)
+  const reopen = useReopenCoverage()
   const { data: isSessionWeek } = useIsSessionWeek(week)
   const { data: nextSession } = useNextSession()
   const isBreak = isSessionWeek === false
@@ -250,7 +252,28 @@ export function SchedulingAdmin() {
                       {c.status === 'open' ? (
                         <Badge variant="outline">Open</Badge>
                       ) : (
-                        <Badge variant="secondary">Covered by {c.coverer ?? '—'}</Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary">Covered by {c.coverer ?? '—'}</Badge>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={reopen.isPending}
+                            onClick={() => {
+                              if (
+                                !window.confirm(
+                                  `Re-open coverage for ${c.group_name} (${c.class_name})? This releases ${c.coverer ?? 'the coverer'} so someone else can claim it.`,
+                                )
+                              )
+                                return
+                              reopen.mutate(c.id, {
+                                onSuccess: () => toast.success('Coverage re-opened'),
+                                onError: (e) => toast.error(`Failed: ${(e as Error).message}`),
+                              })
+                            }}
+                          >
+                            Re-open
+                          </Button>
+                        </div>
                       )}
                     </div>
                   ))}

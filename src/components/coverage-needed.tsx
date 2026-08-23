@@ -48,7 +48,15 @@ export function CoverageNeeded() {
               <Button
                 size="sm"
                 disabled={claim.isPending || closed}
-                onClick={() => onClaim(r.id)}
+                onClick={() => {
+                  if (
+                    !window.confirm(
+                      `Confirm you'll cover ${r.group_name} · ${r.class_name} for the week of ${r.week_start_date}?`,
+                    )
+                  )
+                    return
+                  onClaim(r.id)
+                }}
               >
                 {closed ? 'Closed' : 'I will cover'}
               </Button>
